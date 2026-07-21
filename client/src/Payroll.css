@@ -1,0 +1,372 @@
+.payroll-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.not-authorized {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  color: var(--text-muted);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.payroll-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  background: var(--card-bg);
+  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+
+.payroll-controls .form-group {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.payroll-controls .form-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.payroll-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .payroll-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.payroll-list-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+}
+
+.payroll-list-header {
+  padding: 16px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.employee-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.employee-item {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.employee-item:hover {
+  background-color: var(--surface);
+}
+
+.employee-item.selected {
+  background-color: var(--primary-bg);
+  border-left: 4px solid var(--primary);
+  padding-left: 16px;
+}
+
+.employee-item:last-child {
+  border-bottom: none;
+}
+
+.emp-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.emp-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.emp-name {
+  font-weight: 500;
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.emp-role {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.emp-pay {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.flagged-alert-box {
+  background-color: var(--warning-bg);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 16px 20px;
+}
+
+.flagged-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warning);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flagged-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.flagged-badge-item {
+  background: var(--card-bg);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.flagged-badge-item:hover {
+  border-color: var(--warning);
+  background: var(--surface);
+  transform: translateY(-1px);
+}
+
+.flagged-badge-name {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.flagged-badge-role {
+  color: var(--text-muted);
+}
+
+.employee-item.flagged-user-item {
+  border-left: 4px solid var(--warning);
+}
+
+.employee-item.flagged-user-item.selected {
+  background-color: var(--warning-bg);
+  border-left: 4px solid var(--warning);
+}
+
+.text-warning {
+  color: var(--warning) !important;
+}
+
+/* Callout in details panel */
+.warning-callout {
+  background-color: var(--warning-bg);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.payroll-detail-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow);
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.detail-info h2 {
+  margin: 0 0 4px 0;
+  font-size: 24px;
+  color: var(--text-h);
+}
+
+.detail-info p {
+  margin: 0;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.breakdown-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.breakdown-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.breakdown-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.breakdown-card.total {
+  background-color: var(--primary-bg);
+  border-color: var(--primary-border);
+}
+
+.breakdown-card.total .breakdown-value {
+  color: var(--primary);
+}
+
+.empty-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 0;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Formula Card */
+.payroll-formula-card {
+  margin-top: 32px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.formula-title {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.formula-expression {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.formula-expression code {
+  background: var(--card-bg);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-h);
+  font-size: 12px;
+}
+
+.formula-math {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-h);
+  background-color: var(--card-bg);
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  line-height: 1.6;
+}
+
+.formula-math code {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.breakdown-sublabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Sub-card styling adjustments */
+.breakdown-card.total.flagged {
+  background-color: var(--warning-bg);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.breakdown-card.total.flagged .breakdown-value {
+  color: var(--warning);
+}

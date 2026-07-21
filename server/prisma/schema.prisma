@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model attendance_logs {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id            String    @db.Uuid
+  user_id              String    @db.Uuid
+  check_in_at          DateTime  @default(now()) @db.Timestamptz(6)
+  check_in_lat         Float?
+  check_in_lng         Float?
+  check_in_accuracy_m  Float?
+  check_out_at         DateTime? @db.Timestamptz(6)
+  check_out_lat        Float?
+  check_out_lng        Float?
+  check_out_accuracy_m Float?
+  tenants              tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tenant_id], map: "idx_attendance_logs_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_logs {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id  String   @db.Uuid
+  user_id    String   @db.Uuid
+  action     String
+  metadata   Json     @default("{}")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  tenants    tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tenant_id], map: "idx_audit_logs_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model checklist_runs {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id     String        @db.Uuid
+  sop_id        String        @db.Uuid
+  operator_id   String        @db.Uuid
+  status        String        @default("in_progress")
+  started_at    DateTime      @default(now()) @db.Timestamptz(6)
+  completed_at  DateTime?     @db.Timestamptz(6)
+  users                       users         @relation(fields: [operator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sop_templates               sop_templates @relation(fields: [sop_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants                     tenants       @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  steps                       steps[]
+  completed_by_admin_override Boolean       @default(false)
+  overridden_by               String?       @db.Uuid
+  override_reason             String?
+
+  @@index([tenant_id], map: "idx_checklist_runs_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model leave_requests {
+  id                                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                               String    @db.Uuid
+  user_id                                 String    @db.Uuid
+  start_date                              DateTime  @db.Date
+  end_date                                DateTime  @db.Date
+  reason                                  String?
+  status                                  String    @default("pending")
+  reviewed_by                             String?   @db.Uuid
+  reviewed_at                             DateTime? @db.Timestamptz(6)
+  created_at                              DateTime  @default(now()) @db.Timestamptz(6)
+  is_emergency                            Boolean   @default(false)
+  users_leave_requests_reviewed_byTousers users?    @relation("leave_requests_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants                                 tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_leave_requests_user_idTousers     users     @relation("leave_requests_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tenant_id], map: "idx_leave_requests_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sop_templates {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id      String           @db.Uuid
+  created_by     String           @db.Uuid
+  title          String
+  category       String?
+  version        Int              @default(1)
+  is_current     Boolean          @default(true)
+  content        Json             @default("{}")
+  archived       Boolean          @default(false)
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  checklist_runs checklist_runs[]
+  users          users            @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants        tenants          @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([tenant_id], map: "idx_sop_templates_tenant")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model steps {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id      String         @db.Uuid
+  run_id         String         @db.Uuid
+  description    String
+  evidence_url   String?
+  completed_by   String?        @db.Uuid
+  completed_at   DateTime?      @db.Timestamptz(6)
+  users          users?         @relation(fields: [completed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  checklist_runs checklist_runs @relation(fields: [run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants        tenants        @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([tenant_id], map: "idx_steps_tenant")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model tenants {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  plan_tier       String            @default("starter")
+  billing_status  String            @default("trial")
+  location_lat      Float?
+  location_lng      Float?
+  location_radius_m Float?
+  leave_notice_days Int               @default(3)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  attendance_logs attendance_logs[]
+  audit_logs      audit_logs[]
+  checklist_runs  checklist_runs[]
+  leave_requests  leave_requests[]
+  sop_templates   sop_templates[]
+  steps           steps[]
+  users           users[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model users {
+  id                                               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                                        String            @db.Uuid
+  username                                         String
+  password_hash                                    String
+  role                                             String            @default("operator")
+  status                                           String            @default("active")
+  hourly_rate                                      Decimal?          @db.Decimal(10, 2)
+  created_at                                       DateTime          @default(now()) @db.Timestamptz(6)
+  page_permissions                                 Json              @default("{}")
+  attendance_logs                                  attendance_logs[]
+  audit_logs                                       audit_logs[]
+  checklist_runs                                   checklist_runs[]
+  leave_requests_leave_requests_reviewed_byTousers leave_requests[]  @relation("leave_requests_reviewed_byTousers")
+  leave_requests_leave_requests_user_idTousers     leave_requests[]  @relation("leave_requests_user_idTousers")
+  sop_templates                                    sop_templates[]
+  steps                                            steps[]
+  tenants                                          tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, username])
+  @@index([tenant_id], map: "idx_users_tenant")
+}
