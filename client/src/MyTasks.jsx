@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from './config/api';
 import './SopLibrary.css'; // Reuse existing card styles
 import ChecklistRun from './ChecklistRun';
 
@@ -17,7 +18,7 @@ const MyTasks = ({ token, decoded }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:5000/checklist-runs/me', {
+      const res = await fetch(`${API_URL}/checklist-runs/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

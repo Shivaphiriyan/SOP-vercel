@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from './config/api';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -132,7 +133,7 @@ export default function Attendance({ token, decoded }) {
 
   const fetchOfficeLocation = async () => {
     try {
-      const res = await fetch('http://localhost:5000/attendance/office', {
+      const res = await fetch(`${API_URL}/attendance/office`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -152,7 +153,7 @@ export default function Attendance({ token, decoded }) {
 
   const fetchMyAttendance = async () => {
     try {
-      const res = await fetch('http://localhost:5000/attendance/me', {
+      const res = await fetch(`${API_URL}/attendance/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -168,7 +169,7 @@ export default function Attendance({ token, decoded }) {
 
   const fetchAdminAttendance = async () => {
     try {
-      const res = await fetch('http://localhost:5000/admin/attendance', {
+      const res = await fetch(`${API_URL}/admin/attendance`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -196,7 +197,7 @@ export default function Attendance({ token, decoded }) {
     setActionLoading(true);
     setStatusMessage(null);
 
-    const url = isCheckIn ? 'http://localhost:5000/attendance/check-in' : 'http://localhost:5000/attendance/check-out';
+    const url = isCheckIn ? `${API_URL}/attendance/check-in` : `${API_URL}/attendance/check-out`;
     
     try {
       const res = await fetch(url, {

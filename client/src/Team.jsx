@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from './config/api';
 import './Team.css';
 
 const Team = ({ token, decoded }) => {
@@ -29,7 +30,7 @@ const Team = ({ token, decoded }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/admin/users', {
+      const response = await fetch(`${API_URL}/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -60,7 +61,7 @@ const Team = ({ token, decoded }) => {
 
     setError('');
     try {
-      const response = await fetch(`http://localhost:5000/admin/users/${userId}`, {
+      const response = await fetch(`${API_URL}/admin/users/${userId}`, {
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',
@@ -103,7 +104,7 @@ const Team = ({ token, decoded }) => {
     setAccessError('');
     setAccessSuccess(false);
     try {
-      const response = await fetch(`http://localhost:5000/admin/users/${selectedUserForAccess.id}/permissions`, {
+      const response = await fetch(`${API_URL}/admin/users/${selectedUserForAccess.id}/permissions`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +146,7 @@ const Team = ({ token, decoded }) => {
     setSuccessDetails(null);
 
     try {
-      const response = await fetch('http://localhost:5000/admin/users', {
+      const response = await fetch(`${API_URL}/admin/users`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from './config/api';
 import './Payroll.css';
 
 const Payroll = ({ token, decoded }) => {
-  // Set default period to current month
-  const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-  const [periodStart, setPeriodStart] = useState(firstDay.toISOString().split('T')[0]);
-  const [periodEnd, setPeriodEnd] = useState(lastDay.toISOString().split('T')[0]);
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
   
   const [payrollData, setPayrollData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+
+  // Set default period to current month (1st of month to today)
+  useEffect(() => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Format YYYY-MM-DD
+    const formatDate = (date) => date.toISOString().split('T')[0];
+    
+    setPeriodStart(formatDate(firstDay));
+    setPeriodEnd(formatDate(now));
+  }, []);
 
   // Formatting helpers for Sri Lankan Rupees (LKR)
   const formatLKR = (amount) => {
@@ -35,7 +42,7 @@ const Payroll = ({ token, decoded }) => {
   };
 
   useEffect(() => {
-    if (decoded?.role === 'admin') {
+    if (periodStart && periodEnd) {
       fetchPayroll();
     }
   }, [token, periodStart, periodEnd]);
@@ -46,7 +53,7 @@ const Payroll = ({ token, decoded }) => {
     setError('');
     
     try {
-      const res = await fetch(`http://localhost:5000/admin/payroll?periodStart=${periodStart}&periodEnd=${periodEnd}`, {
+      const res = await fetch(`${API_URL}/admin/payroll?periodStart=${periodStart}&periodEnd=${periodEnd}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

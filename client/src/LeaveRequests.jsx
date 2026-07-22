@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from './config/api';
 import './LeaveRequests.css';
 
 const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }) => {
@@ -35,7 +36,7 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
 
   const fetchLeaveConfig = async () => {
     try {
-      const res = await fetch('http://localhost:5000/leave-requests/config', {
+      const res = await fetch(`${API_URL}/leave-requests/config`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -50,7 +51,7 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
   const fetchMyRequests = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/leave-requests/me', {
+      const res = await fetch(`${API_URL}/leave-requests/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -67,7 +68,7 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
   const fetchTeamRequests = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/admin/leave-requests', {
+      const res = await fetch(`${API_URL}/admin/leave-requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -100,7 +101,7 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
     }
 
     try {
-      const res = await fetch('http://localhost:5000/leave-requests', {
+      const res = await fetch(`${API_URL}/leave-requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -131,7 +132,7 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      const res = await fetch(`http://localhost:5000/leave-requests/${id}`, {
+      const res = await fetch(`${API_URL}/leave-requests/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

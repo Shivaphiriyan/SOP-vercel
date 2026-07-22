@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChecklistRun.css';
+import { API_URL } from './config/api';
 
 const getEvidenceUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `http://localhost:5000${url}`;
+  return `${API_URL}${url}`;
 };
 
 const compressImageIfNeeded = (file, maxSizeInBytes = 800 * 1024) => {
@@ -120,7 +121,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
       let activeRunId = runId;
       if (!activeRunId && sopId) {
         // Start a new checklist run
-        const startRes = await fetch('http://localhost:5000/checklist-runs', {
+        const startRes = await fetch(`${API_URL}/checklist-runs`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -140,7 +141,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
         setRunId(activeRunId);
       } else if (activeRunId) {
         // Fetch existing checklist run
-        const res = await fetch(`http://localhost:5000/checklist-runs/${activeRunId}`, {
+        const res = await fetch(`${API_URL}/checklist-runs/${activeRunId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) throw new Error('Failed to load checklist run details.');
@@ -211,7 +212,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/checklist-runs/${run.id}/steps/${stepId}`, {
+      const res = await fetch(`${API_URL}/checklist-runs/${run.id}/steps/${stepId}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -230,7 +231,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
     // Mock network delay for upload
     setTimeout(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/checklist-runs/${run.id}/steps/${stepId}`, {
+        const res = await fetch(`${API_URL}/checklist-runs/${run.id}/steps/${stepId}`, {
           method: 'PATCH',
           headers: { 
             'Content-Type': 'application/json',
@@ -285,7 +286,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
       const formData = new FormData();
       formData.append('file', fileToUpload);
 
-      const res = await fetch('http://localhost:5000/uploads', {
+      const res = await fetch(`${API_URL}/uploads`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -300,7 +301,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
       }
 
       // Save the uploaded URL to the step on the server without completing it yet
-      const patchRes = await fetch(`http://localhost:5000/checklist-runs/${run.id}/steps/${stepId}`, {
+      const patchRes = await fetch(`${API_URL}/checklist-runs/${run.id}/steps/${stepId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -330,7 +331,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
     setSigning(true);
     
     try {
-      const res = await fetch(`http://localhost:5000/sops/${sop?.id}/sign`, {
+      const res = await fetch(`${API_URL}/sops/${sop?.id}/sign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -364,7 +365,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
     setOverriding(true);
 
     try {
-      const res = await fetch(`http://localhost:5000/checklist-runs/${run.id}/admin-complete`, {
+      const res = await fetch(`${API_URL}/checklist-runs/${run.id}/admin-complete`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

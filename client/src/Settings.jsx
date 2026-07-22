@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from './config/api';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -43,7 +44,7 @@ const Settings = ({ token }) => {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/admin/settings', {
+      const response = await fetch(`${API_URL}/admin/settings`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -106,7 +107,7 @@ const Settings = ({ token }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/admin/settings', {
+      const response = await fetch(`${API_URL}/admin/settings`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',

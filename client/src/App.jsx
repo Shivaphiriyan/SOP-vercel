@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './App.css';
+import { API_URL } from './config/api';
 import Attendance from './Attendance';
 import Team from './Team';
 import Settings from './Settings';
@@ -182,7 +183,7 @@ function App() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -206,7 +207,7 @@ function App() {
       setDecoded(decodedUser);
     } catch (err) {
       console.error('Connection error:', err);
-      setError('Could not connect to backend. Please ensure the server is running on http://localhost:5000');
+      setError(`Could not connect to backend. Please ensure the server is running on ${API_URL}`);
     } finally {
       setLoading(false);
     }
@@ -222,7 +223,7 @@ function App() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/auth/signup', {
+      const response = await fetch(`${API_URL}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -244,7 +245,7 @@ function App() {
       setDecoded(decodedUser);
     } catch (err) {
       console.error('Connection error:', err);
-      setError('Could not connect to backend. Please ensure the server is running on http://localhost:5000');
+      setError(`Could not connect to backend. Please ensure the server is running on ${API_URL}`);
     } finally {
       setLoading(false);
     }
@@ -300,7 +301,7 @@ function App() {
     setDashboardLoading(true);
     setDashboardError('');
     try {
-      const response = await fetch('http://localhost:5000/dashboard/summary', {
+      const response = await fetch(`${API_URL}/dashboard/summary`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -345,7 +346,7 @@ function App() {
     setHistoryLoading(true);
     setHistoryError('');
     try {
-      const res = await fetch('http://localhost:5000/checklist-runs', {
+      const res = await fetch(`${API_URL}/checklist-runs`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -367,7 +368,7 @@ function App() {
     setAuditLoading(true);
     setAuditError('');
     try {
-      const res = await fetch('http://localhost:5000/audit-logs', {
+      const res = await fetch(`${API_URL}/audit-logs`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

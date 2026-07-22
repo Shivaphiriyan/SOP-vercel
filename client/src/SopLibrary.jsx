@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from './config/api';
 import './SopLibrary.css';
 import ChecklistRun from './ChecklistRun';
 
@@ -36,7 +37,7 @@ const SopLibrary = ({ token, decoded, showToast }) => {
     
     // Load employees list
     try {
-      const res = await fetch('http://localhost:5000/admin/users', {
+      const res = await fetch(`${API_URL}/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -67,7 +68,7 @@ const SopLibrary = ({ token, decoded, showToast }) => {
     setAssignSuccess('');
 
     try {
-      const res = await fetch('http://localhost:5000/checklist-runs', {
+      const res = await fetch(`${API_URL}/checklist-runs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -101,7 +102,7 @@ const SopLibrary = ({ token, decoded, showToast }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:5000/sops', {
+      const res = await fetch(`${API_URL}/sops`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -128,7 +129,7 @@ const SopLibrary = ({ token, decoded, showToast }) => {
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/sops/${sop.id}`, {
+      const res = await fetch(`${API_URL}/sops/${sop.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -227,8 +228,8 @@ const SopLibrary = ({ token, decoded, showToast }) => {
 
     try {
       const url = currentSopId 
-        ? `http://localhost:5000/sops/${currentSopId}` 
-        : 'http://localhost:5000/sops';
+        ? `${API_URL}/sops/${currentSopId}` 
+        : `${API_URL}/sops`;
       const method = currentSopId ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
