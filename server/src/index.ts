@@ -64,8 +64,10 @@ app.use('/auth/signup', authLimiter);
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-// Serve static uploads
-app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));
+// Serve static uploads (Non-production development environments only)
+if (!config.isProduction) {
+  app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));
+}
 
 // Register authentication, user, and SOP execution routes
 app.use('/', authRouter);
@@ -76,6 +78,8 @@ app.use('/', payrollRouter);
 app.use('/', dashboardRouter);
 app.use('/', adminRouter);
 
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
 // Multer memory storage configuration for evidence uploads
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -84,10 +88,10 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB limit
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed!'));
+      cb(new Error('Invalid file type. Only JPEG, PNG, and WebP images are allowed!'));
     }
   }
 });
@@ -96,11 +100,17 @@ const upload = multer({
 app.post('/uploads', authenticateUser, setTenantContext, (req, res, next) => {
   upload.single('file')(req, res, async (err) => {
     if (err) {
-      return res.status(400).json({ error: err.message });
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File size exceeds maximum allowed limit of 5MB.' });
+        }
+        return res.status(400).json({ error: err.message });
+      }
+      return res.status(400).json({ error: err.message || 'Invalid upload request.' });
     }
     
     if (!req.file) {
-      return res.status(400).json({ error: 'Please upload a file.' });
+      return res.status(400).json({ error: 'No file uploaded. Please select an image file.' });
     }
     
     try {

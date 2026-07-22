@@ -46,6 +46,12 @@ const frontendUrls = rawFrontendUrl
   .map((url) => url.trim())
   .filter(Boolean);
 
+const hasCloudinaryConfig = Boolean(
+  cloudinaryCloudName.trim() &&
+  cloudinaryApiKey.trim() &&
+  cloudinaryApiSecret.trim()
+);
+
 export const config = {
   env,
   isProduction: env === 'production',
@@ -56,6 +62,7 @@ export const config = {
   cloudinary: {
     cloudName: cloudinaryCloudName,
     apiKey: cloudinaryApiKey,
-    apiSecret: cloudinaryApiSecret
+    apiSecret: cloudinaryApiSecret,
+    isConfigured: hasCloudinaryConfig
   }
 } as const;
