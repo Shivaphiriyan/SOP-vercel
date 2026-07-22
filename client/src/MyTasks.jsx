@@ -10,10 +10,6 @@ const MyTasks = ({ token, decoded }) => {
 
   const [activeRunId, setActiveRunId] = useState(null);
 
-  useEffect(() => {
-    fetchTasks();
-  }, [token]);
-
   const fetchTasks = async () => {
     setLoading(true);
     setError('');
@@ -34,6 +30,10 @@ const MyTasks = ({ token, decoded }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchTasks();
+  }, [token]);
 
   const handleCloseRun = () => {
     setActiveRunId(null);

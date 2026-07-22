@@ -77,9 +77,9 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
   let userRole = decoded?.role;
   if (!userRole && token) {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      userRole = payload.role;
-    } catch (e) {}
+    } catch (_e) {
+      // Ignore token parse error
+    }
   }
   const isAuditor = userRole === 'auditor';
   const isAdminOrSupervisorUser = userRole === 'admin' || userRole === 'supervisor';

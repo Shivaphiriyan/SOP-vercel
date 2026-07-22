@@ -1,0 +1,652 @@
+/* =====================================================================
+   Enterprise ERP Analytics Dashboard Stylesheet (Light & Dark System)
+   ===================================================================== */
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+
+/* 1. Welcome Header Section */
+.dashboard-header-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  box-shadow: var(--shadow-md);
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.dashboard-welcome-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-greeting-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.greeting-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  display: inline-block;
+}
+
+.dashboard-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.dashboard-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workspace-badge {
+  background: var(--primary-soft);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--primary-border);
+}
+
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.compact-btn {
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* 2. Stat Summary Cards Grid */
+.dashboard-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.stat-card-compact {
+  background: var(--card-bg);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 90px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  outline: none;
+}
+
+.stat-card-compact:hover, .stat-card-compact:focus-visible {
+  transform: translateY(-3px) scale(1.008);
+  border-color: var(--primary-border);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-card-left {
+  flex-shrink: 0;
+}
+
+.stat-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-blue { background: var(--info-soft); color: var(--info); }
+.icon-green { background: var(--success-soft); color: var(--success); }
+.icon-yellow { background: var(--warning-soft); color: var(--warning); }
+.icon-purple { background: var(--primary-soft); color: var(--primary); }
+
+.stat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.stat-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.stat-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.stat-desc {
+  color: var(--text-muted);
+}
+
+.stat-trend {
+  font-weight: 600;
+}
+
+.trend-up { color: var(--success); }
+.trend-neutral { color: var(--text-muted); }
+
+/* 3. ERP Layout Split Grid (65% Left / 35% Right) */
+.erp-dashboard-grid {
+  display: grid;
+  grid-template-columns: 65% 35%;
+  gap: 20px;
+  width: 100%;
+  align-items: start;
+}
+
+/* Left Panel: Company Analytics Section */
+.analytics-section-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: var(--shadow-md);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.analytics-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.analytics-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeframe-select {
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Doughnut Charts Row */
+.doughnut-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.chart-card {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.chart-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.doughnut-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.canvas-wrapper {
+  width: 110px;
+  height: 110px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.doughnut-center-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.center-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.center-text {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.legend-label {
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.legend-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Trend Line Chart Card */
+.trend-chart-card {
+  padding: 18px;
+}
+
+.trend-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.trend-legend-badges {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.badge-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.line-canvas-container {
+  height: 180px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Summary Mini Cards */
+.analytics-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.analytics-mini-card {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mini-card-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mini-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini-card-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.mini-card-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.mini-card-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* 4. Right Panel: Recent Activity Timeline */
+.recent-activity-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-md);
+  height: 100%;
+  box-sizing: border-box;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title-icon {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+/* Activity Category Chips - No Horizontal Scrollbar */
+.activity-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-default);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.activity-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-btn {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.filter-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.filter-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.timeline-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.timeline-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.timeline-content:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.timeline-header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.timeline-main-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.employee-highlight {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.timeline-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.timeline-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.category-tag {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tag-checklist { background: var(--primary-soft); color: var(--primary); }
+.tag-sop { background: var(--info-soft); color: var(--info); }
+.tag-attendance { background: var(--success-soft); color: var(--success); }
+.tag-leave { background: var(--warning-soft); color: var(--warning); }
+.tag-audit { background: var(--danger-soft); color: var(--danger); }
+
+.timeline-end-marker {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-top: 8px;
+}
+
+.compact-empty-activity {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  background: var(--surface-secondary);
+  border: 1px dashed var(--border-default);
+  border-radius: 10px;
+}
+
+.empty-act-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-act-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* 5. Responsive Layout Rules */
+@media (max-width: 1150px) {
+  .erp-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doughnut-charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard-header-actions {
+    width: 100%;
+  }
+
+  .dashboard-header-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .dashboard-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -8,12 +8,12 @@ const router = Router();
 const defaultPermissionsForRole = (role: string) => {
   if (role === 'admin' || role === 'supervisor') {
     return { attendance: true, leaveRequests: true, payroll: true, sopLibrary: true };
-  } else if (role === 'operator') {
+  } else if (role === 'operator' || role === 'employee') {
     return { attendance: true, leaveRequests: true, payroll: false, sopLibrary: true };
   } else if (role === 'auditor') {
     return { attendance: false, leaveRequests: false, payroll: false, sopLibrary: true };
   }
-  return { attendance: true, leaveRequests: true, payroll: true, sopLibrary: true };
+  return { attendance: true, leaveRequests: true, payroll: false, sopLibrary: true };
 };
 
 // Protect all /admin routes with admin role
@@ -30,7 +30,7 @@ router.post('/admin/users', async (req, res, next) => {
     return res.status(400).json({ error: 'Missing username, tempPassword, or role' });
   }
 
-  const validRoles = ['admin', 'supervisor', 'operator', 'auditor'];
+  const validRoles = ['admin', 'supervisor', 'operator', 'auditor', 'employee'];
   if (!validRoles.includes(role)) {
     return res.status(400).json({ error: 'Invalid role' });
   }

@@ -37,9 +37,13 @@ const Settings = ({ token }) => {
   const [statusMessage, setStatusMessage] = useState(null);
   const [statusType, setStatusType] = useState(null);
 
-  useEffect(() => {
-    fetchSettings();
-  }, [token]);
+  const showStatus = (msg, type) => {
+    setStatusMessage(msg);
+    setStatusType(type);
+    if (type === 'success') {
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -56,20 +60,16 @@ const Settings = ({ token }) => {
       } else {
         showStatus('Failed to load settings', 'error');
       }
-    } catch (err) {
+    } catch (_err) {
       showStatus('Network error while loading settings', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const showStatus = (msg, type) => {
-    setStatusMessage(msg);
-    setStatusType(type);
-    if (type === 'success') {
-      setTimeout(() => setStatusMessage(null), 3000);
-    }
-  };
+  useEffect(() => {
+    fetchSettings();
+  }, [token]);
 
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {

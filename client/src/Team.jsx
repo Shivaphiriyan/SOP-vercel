@@ -342,6 +342,7 @@ const Team = ({ token, decoded }) => {
                       value={addForm.role}
                       onChange={e => setAddForm({...addForm, role: e.target.value})}
                     >
+                      <option value="employee">Employee</option>
                       <option value="operator">Operator</option>
                       <option value="supervisor">Supervisor</option>
                       <option value="auditor">Auditor</option>

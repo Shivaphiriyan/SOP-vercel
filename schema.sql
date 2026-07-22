@@ -32,7 +32,7 @@ CREATE TABLE users (
     username          text NOT NULL,
     password_hash     text NOT NULL,          -- bcrypt/argon2 hash
     role              text NOT NULL DEFAULT 'operator'
-                        CHECK (role IN ('admin', 'supervisor', 'operator', 'auditor')),
+                        CHECK (role IN ('admin', 'supervisor', 'operator', 'auditor', 'employee')),
     status            text NOT NULL DEFAULT 'active'
                         CHECK (status IN ('invited', 'active', 'disabled')),
     hourly_rate       numeric(10,2),          -- payroll calc
@@ -147,6 +147,7 @@ CREATE INDEX idx_checklist_runs_tenant   ON checklist_runs (tenant_id);
 CREATE INDEX idx_steps_tenant            ON steps (tenant_id);
 CREATE INDEX idx_audit_logs_tenant       ON audit_logs (tenant_id);
 CREATE INDEX idx_attendance_logs_tenant  ON attendance_logs (tenant_id);
+CREATE UNIQUE INDEX idx_attendance_logs_active_user ON attendance_logs (tenant_id, user_id) WHERE check_out_at IS NULL;
 CREATE INDEX idx_leave_requests_tenant   ON leave_requests (tenant_id);
 
 -- =====================================================================

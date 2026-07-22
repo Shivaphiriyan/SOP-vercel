@@ -35,7 +35,7 @@ CREATE TABLE "users" (
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "users_role_check" CHECK ("role" IN ('admin', 'supervisor', 'operator', 'auditor')),
+    CONSTRAINT "users_role_check" CHECK ("role" IN ('admin', 'supervisor', 'operator', 'auditor', 'employee')),
     CONSTRAINT "users_status_check" CHECK ("status" IN ('invited', 'active', 'disabled')),
     CONSTRAINT "users_tenant_id_username_key" UNIQUE ("tenant_id", "username"),
     CONSTRAINT "users_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION
@@ -157,6 +157,7 @@ CREATE INDEX "idx_checklist_runs_tenant" ON "checklist_runs"("tenant_id");
 CREATE INDEX "idx_steps_tenant" ON "steps"("tenant_id");
 CREATE INDEX "idx_audit_logs_tenant" ON "audit_logs"("tenant_id");
 CREATE INDEX "idx_attendance_logs_tenant" ON "attendance_logs"("tenant_id");
+CREATE UNIQUE INDEX "idx_attendance_logs_active_user" ON "attendance_logs"("tenant_id", "user_id") WHERE "check_out_at" IS NULL;
 CREATE INDEX "idx_leave_requests_tenant" ON "leave_requests"("tenant_id");
 
 -- 11. Row-Level Security (RLS) Enablement & Forced Security for Table Owners

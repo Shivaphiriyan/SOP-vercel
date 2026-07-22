@@ -11,7 +11,10 @@
     "prisma:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:status": "prisma migrate status"
+    "db:migrate:status": "prisma migrate status",
+    "test:attendance": "tsx scripts/test-attendance.ts",
+    "test:activity": "tsx scripts/test-recent-activity.ts",
+    "test:leave": "tsx scripts/test-leave.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.16.1",

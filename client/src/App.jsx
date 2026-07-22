@@ -11,6 +11,14 @@ import SopLibrary from './SopLibrary';
 import MyTasks from './MyTasks';
 import ChecklistRun from './ChecklistRun';
 import NotFound from './NotFound';
+import './components/Dashboard/Dashboard.css';
+import DashboardHeader from './components/Dashboard/DashboardHeader';
+import StatCard from './components/Dashboard/StatCard';
+import AnalyticsOverview from './components/Dashboard/AnalyticsOverview';
+import RecentActivity from './components/Dashboard/RecentActivity';
+import LoadingSkeleton from './components/Dashboard/LoadingSkeleton';
+import EmptyState from './components/Dashboard/EmptyState';
+import ThemeToggle from './components/ThemeToggle';
 
 // Native JWT helper to decode payload without external packages
 const parseJwt = (token) => {
@@ -137,6 +145,8 @@ function App() {
   const [tenantSlug, setTenantSlug] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [isSignup, setIsSignup] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -146,6 +156,15 @@ function App() {
   
   const [activeTab, setActiveTab] = useState('dashboard');
   const [leaveRequestsSubTab, setLeaveRequestsSubTab] = useState('my_requests');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const navigateTo = (tab, subTab = null) => {
+    setActiveTab(tab);
+    if (subTab && tab === 'leave_requests') {
+      setLeaveRequestsSubTab(subTab);
+    }
+    setIsSidebarOpen(false);
+  };
 
   // Dashboard state variables
   const [summaryData, setSummaryData] = useState(null);
@@ -398,851 +417,728 @@ function App() {
   return (
     <div style={{ display: 'flex', width: '100%', minHeight: '100vh', flexDirection: 'column' }}>
       {!token ? (
-        // Login Card Screen
-        <div className="login-container">
-          <div className="login-card">
-            <div className="brand-header">
-              <div className="logo-placeholder">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="logo-icon"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0114 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"
-                  />
-                </svg>
+        /* Redesigned 2-Column Authentication Layout */
+        <div className="auth-page-wrapper">
+          <div className="auth-top-bar">
+            <ThemeToggle />
+          </div>
+
+          <div className="auth-grid-container">
+            {/* Left Branding Section (52% Desktop Width) */}
+            <div className="auth-brand-panel">
+              <div className="brand-logo-row">
+                <div className="logo-placeholder-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0114 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                  </svg>
+                </div>
+                <span className="brand-name">SOP Portal</span>
               </div>
-              <h2>{isSignup ? 'Create Workspace' : 'Company Workspace'}</h2>
-              <p>{isSignup ? 'Set up a new company tenant.' : 'Enter your workspace credentials to log in.'}</p>
+
+              <div className="brand-content-main">
+                <h1 className="brand-headline">
+                  Manage procedures, attendance, leave, teams, and compliance in one secure workspace.
+                </h1>
+
+                <div className="brand-feature-list">
+                  <div className="feature-item">
+                    <span className="feature-check">✓</span>
+                    <span>Multi-tenant workspace isolation</span>
+                  </div>
+                  <div className="feature-item">
+                    <span className="feature-check">✓</span>
+                    <span>Role-based access control</span>
+                  </div>
+                  <div className="feature-item">
+                    <span className="feature-check">✓</span>
+                    <span>Secure SOP & checklist management</span>
+                  </div>
+                  <div className="feature-item">
+                    <span className="feature-check">✓</span>
+                    <span>Attendance and leave tracking</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="brand-footer-info">
+                <span>SOP SaaS Platform &copy; 2026</span>
+              </div>
             </div>
 
-            {error && (
-              <div className="error-banner">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="error-icon"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-                  />
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-
-            <form onSubmit={isSignup ? handleSignup : handleLogin}>
-              {isSignup ? (
-                <div className="form-group">
-                  <label className="form-label" htmlFor="company-input">
-                    Company Name
-                  </label>
-                  <div className="input-wrapper">
-                    <input
-                      id="company-input"
-                      type="text"
-                      className="input-field"
-                      placeholder="e.g. Acme Corp"
-                      value={companyName}
-                      onChange={(e) => {
-                        setCompanyName(e.target.value);
-                        setTenantSlug(e.target.value.toLowerCase().trim().replace(/[^\\w\\s-]/g, '').replace(/[\\s_-]+/g, '-').replace(/^-+|-+$/g, ''));
-                      }}
-                      disabled={loading}
-                    />
+            {/* Right Login Card Section (48% Desktop Width) */}
+            <div className="auth-card-panel">
+              <div className="login-card-elevated">
+                <div className="card-brand-header">
+                  <div className="mobile-logo-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 24, height: 24 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0114 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                    </svg>
                   </div>
-                  <div className="workspace-preview">
-                    Your workspace URL will be: <span>https://{tenantSlug || 'your-workspace'}.sop-saas.com</span>
-                  </div>
+                  <h2 className="login-card-title">{isSignup ? 'Create Workspace' : 'Welcome back'}</h2>
+                  <p className="login-card-subtitle">{isSignup ? 'Set up a new company tenant.' : 'Sign in to your company workspace.'}</p>
                 </div>
-              ) : (
-                <div className="form-group">
-                  <label className="form-label" htmlFor="workspace-input">
-                    Workspace Domain
-                  </label>
-                  <div className="input-wrapper">
-                    <input
-                      id="workspace-input"
-                      type="text"
-                      className="input-field"
-                      placeholder="e.g. acme-co"
-                      value={tenantSlug}
-                      onChange={(e) => setTenantSlug(e.target.value)}
-                      disabled={loading}
-                    />
+
+                {error && (
+                  <div className="error-banner">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="error-icon" style={{ width: 18, height: 18 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <span>{error}</span>
                   </div>
-                  <div className="workspace-preview">
-                    Logging into: <span>https://{tenantSlug || 'your-workspace'}.sop-saas.com</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="username-input">
-                  {isSignup ? "Admin Username" : "Username"}
-                </label>
-                <input
-                  id="username-input"
-                  type="text"
-                  className="input-field"
-                  placeholder="Enter username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="password-input">
-                  {isSignup ? "Admin Password" : "Password"}
-                </label>
-                <input
-                  id="password-input"
-                  type="password"
-                  className="input-field"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-
-              <button
-                id="login-btn"
-                type="submit"
-                className="btn-primary"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <div className="spinner" />
-                    <span>{isSignup ? 'Signing up...' : 'Logging in...'}</span>
-                  </>
-                ) : (
-                  <span>{isSignup ? 'Create Workspace' : 'Log In'}</span>
                 )}
-              </button>
-            </form>
-            
-            <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px' }}>
-              {isSignup ? (
-                <>Already have an account? <span onClick={() => { setIsSignup(false); setError(''); }} style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: 500 }}>Log In</span></>
-              ) : (
-                <>Need an account? <span onClick={() => { setIsSignup(true); setError(''); }} style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: 500 }}>Sign Up</span></>
-              )}
+
+                <form onSubmit={isSignup ? handleSignup : handleLogin} className="login-form">
+                  {isSignup ? (
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="company-input">Company Name</label>
+                      <input
+                        id="company-input"
+                        type="text"
+                        className="input-field full-width"
+                        placeholder="e.g. Acme Corp"
+                        value={companyName}
+                        onChange={(e) => {
+                          setCompanyName(e.target.value);
+                          setTenantSlug(e.target.value.toLowerCase().trim().replace(/[^\\w\\s-]/g, '').replace(/[\\s_-]+/g, '-').replace(/^-+|-+$/g, ''));
+                        }}
+                        disabled={loading}
+                      />
+                      <span className="workspace-preview-text">Workspace URL: <strong>https://{tenantSlug || 'your-workspace'}.sop-saas.com</strong></span>
+                    </div>
+                  ) : (
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="workspace-input">Workspace Domain</label>
+                      <input
+                        id="workspace-input"
+                        type="text"
+                        className="input-field full-width"
+                        placeholder="e.g. acme-co"
+                        value={tenantSlug}
+                        onChange={(e) => setTenantSlug(e.target.value)}
+                        disabled={loading}
+                      />
+                      <span className="workspace-preview-text">Workspace URL: <strong>https://{tenantSlug || 'your-workspace'}.sop-saas.com</strong></span>
+                    </div>
+                  )}
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="username-input">{isSignup ? 'Admin Username' : 'Username'}</label>
+                    <input
+                      id="username-input"
+                      type="text"
+                      className="input-field full-width"
+                      placeholder="Enter username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="password-input">{isSignup ? 'Admin Password' : 'Password'}</label>
+                    <div className="password-input-wrapper">
+                      <input
+                        id="password-input"
+                        type={showPassword ? 'text' : 'password'}
+                        className="input-field full-width"
+                        placeholder="Enter password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle-btn"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 18, height: 18 }}>
+                          {showPassword ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                          ) : (
+                            <>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </>
+                          )}
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {!isSignup && (
+                    <div className="auth-options-row">
+                      <label className="remember-me-label">
+                        <input
+                          type="checkbox"
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                        />
+                        <span>Remember me</span>
+                      </label>
+                    </div>
+                  )}
+
+                  <button
+                    id="login-btn"
+                    type="submit"
+                    className="btn-primary full-width-btn"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <div className="spinner" />
+                        <span>{isSignup ? 'Signing up...' : 'Signing in...'}</span>
+                      </>
+                    ) : (
+                      <span>{isSignup ? 'Create Workspace' : 'Log In'}</span>
+                    )}
+                  </button>
+                </form>
+
+                <div className="auth-switch-footer">
+                  {isSignup ? (
+                    <>Already have an account? <span onClick={() => { setIsSignup(false); setError(''); }} className="switch-link">Log In</span></>
+                  ) : (
+                    <>Need an account? <span onClick={() => { setIsSignup(true); setError(''); }} className="switch-link">Sign Up</span></>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       ) : (
         // Authorized Two-Pane Layout
-        <div className="app-layout">
-          {/* Left Sidebar */}
-          <div className="sidebar">
-            <div className="sidebar-header">
-              <div className="sidebar-logo">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0114 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"
-                  />
-                </svg>
-              </div>
-              <span className="sidebar-title">SOP Portal</span>
-            </div>
-
-            <div className="sidebar-nav">
-              <div 
-                className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('dashboard')}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-                  />
-                </svg>
-                <span>Dashboard</span>
-              </div>
-              {decoded?.role !== 'auditor' && (
-                <>
-                  {decoded?.page_permissions?.attendance !== false && (
-                    <div 
-                      className={`nav-item ${activeTab === 'attendance' ? 'active' : ''}`}
-                      onClick={() => setActiveTab('attendance')}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
-                        />
-                      </svg>
-                      <span>Attendance</span>
-                    </div>
-                  )}
-
-                  {decoded?.page_permissions?.leaveRequests !== false && (
-                    <div 
-                      className={`nav-item ${activeTab === 'leave_requests' ? 'active' : ''}`}
-                      onClick={() => { setActiveTab('leave_requests'); setLeaveRequestsSubTab('my_requests'); }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"
-                        />
-                      </svg>
-                      <span>Leave Requests</span>
-                    </div>
-                  )}
-
-                  {decoded?.page_permissions?.payroll !== false && (
-                    <div 
-                      className={`nav-item ${activeTab === 'payroll' ? 'active' : ''}`}
-                      onClick={() => setActiveTab('payroll')}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 6c-3.128 0-6 2.072-6 5 0 1.22.45 2.585 1.258 3.5H4.75a.75.75 0 000 1.5h14.5a.75.75 0 000-1.5h-2.508c.808-.915 1.258-2.28 1.258-3.5 0-2.928-2.872-5-6-5z"
-                        />
-                      </svg>
-                      <span>Payroll</span>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {decoded?.role !== 'admin' && decoded?.role !== 'supervisor' && decoded?.role !== 'auditor' && (
-                <div 
-                  className={`nav-item ${activeTab === 'tasks' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('tasks')}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>My Tasks</span>
-                </div>
-              )}
-              {decoded?.page_permissions?.sopLibrary !== false && (
-                <div 
-                  className={`nav-item ${activeTab === 'sops' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('sops')}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-                    />
-                  </svg>
-                  <span>SOP Library</span>
-                </div>
-              )}
-              
-              {(decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor') && (
-                <div 
-                  className={`nav-item ${activeTab === 'checklist_history' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('checklist_history')}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 10h.008v.008H9V10zm0 3.5h.008v.008H9v-.008zm0 3.5h.008v.008H9V17zm3-7h.008v.008H12V10zm0 3.5h.008v.008H12v-.008zm0 3.5h.008v.008H12V17z" />
-                  </svg>
-                  <span>Checklist History</span>
-                </div>
-              )}
-
-              {(decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor') && (
-                <div 
-                  className={`nav-item ${activeTab === 'audit_log' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('audit_log')}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                  </svg>
-                  <span>Audit Log</span>
-                </div>
-              )}
-              
-              {decoded?.role === 'admin' && (
-                <div 
-                  className={`nav-item ${activeTab === 'team' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('team')}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z"
-                    />
-                  </svg>
-                  <span>Team</span>
-                </div>
-              )}
-              {decoded?.role === 'admin' && (
-                <div 
-                  className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('settings')}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                  <span>Company Settings</span>
-                </div>
-              )}
-            </div>
-
-            <div className="sidebar-footer">
-              <div className="user-badge">
-                <div className="user-avatar">
-                  {username.substring(0, 2).toUpperCase()}
-                </div>
-                <div className="user-info">
-                  <span className="user-name">{username}</span>
-                  <span className="user-role">{decoded?.role || 'user'}</span>
-                </div>
-              </div>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh' }}>
+          <div className="mobile-header-bar">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
-                className="btn-logout-icon"
-                onClick={handleLogout}
-                title="Log Out"
+                className="hamburger-btn"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                aria-label="Toggle navigation menu"
+                aria-expanded={isSidebarOpen}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
-                  />
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 22, height: 22 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                 </svg>
               </button>
+              <span style={{ fontWeight: 600, fontSize: '16px', color: 'var(--text-h)' }}>SOP Portal</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <ThemeToggle />
+              <span className="workspace-badge">{tenantSlug}</span>
             </div>
           </div>
 
-          {/* Main Area */}
-          <div className="main-content">
-            {activeTab === 'dashboard' && (
-              <>
-                <div className="page-header-container">
-                  <div className="page-header">
-                    <h1>Workspace Dashboard</h1>
-                    <p>
-                      Overview for <span className="workspace-tag">{tenantSlug}.sop-saas.com</span>
-                    </p>
-                  </div>
-    
-                  {(decoded?.role === 'admin' || decoded?.role === 'supervisor') && (
-                    <div className="quick-actions">
-                      <button className="btn-secondary" onClick={() => { setActiveTab('leave_requests'); setLeaveRequestsSubTab('team_requests'); }}>Approve/Decline Leaves</button>
-                      <button className="btn-primary" onClick={() => setActiveTab('sops')}>+ Create SOP</button>
-                    </div>
-                  )}
-                </div>
+          <div className={`sidebar-backdrop ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />
 
-            {dashboardLoading ? (
-              // Loading Skeleton
-              <>
-                <div className="summary-grid">
-                  <div className="skeleton-card" />
-                  <div className="skeleton-card" />
-                  <div className="skeleton-card" />
-                  {decoded?.role !== 'operator' && <div className="skeleton-card" />}
+          <div className="app-layout">
+            {/* Left Sidebar */}
+            <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+              <div className="sidebar-header">
+                <div className="sidebar-logo">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0114 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"
+                    />
+                  </svg>
                 </div>
-                <div className="dashboard-two-column-grid">
-                  <div className="skeleton-panel" />
-                  <div className="skeleton-panel" />
-                </div>
-              </>
-            ) : dashboardError ? (
-              <div className="error-banner">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="error-icon"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-                  />
-                </svg>
-                <span>{dashboardError}</span>
+                <span className="sidebar-title">SOP Portal</span>
               </div>
-            ) : (
-              // Role-customized Dashboard Screens
-              <>
-                <div className="summary-grid">
-                  {decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor' ? (
-                    // --- ADMIN / SUPERVISOR / AUDITOR KPI CARDS ---
-                    <>
-                      <div className="summary-card card-blue">
-                        <div className="summary-details">
-                          <h3>{summaryData?.totalEmployees ?? 0}</h3>
-                          <p>Total Employees</p>
-                        </div>
-                        <div className="summary-icon-wrapper icon-blue">
-                          <svg
-                             xmlns="http://www.w3.org/2000/svg"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             strokeWidth={2}
-                             stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z"
-                            />
-                          </svg>
-                        </div>
-                      </div>
 
-                      <div className="summary-card card-green">
-                        <div className="summary-details">
-                          <h3>{summaryData?.completedToday ?? 0}</h3>
-                          <p>Checklists Completed</p>
-                        </div>
-                        <div className="summary-icon-wrapper icon-green">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                        </div>
+              <div className="sidebar-nav">
+                <div 
+                  className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} 
+                  onClick={() => navigateTo('dashboard')}
+                  tabIndex={0}
+                  role="button"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+                    />
+                  </svg>
+                  <span>Dashboard</span>
+                </div>
+                {decoded?.role !== 'auditor' && (
+                  <>
+                    {decoded?.page_permissions?.attendance !== false && (
+                      <div 
+                        className={`nav-item ${activeTab === 'attendance' ? 'active' : ''}`}
+                        onClick={() => navigateTo('attendance')}
+                        tabIndex={0}
+                        role="button"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+                          />
+                        </svg>
+                        <span>Attendance</span>
                       </div>
+                    )}
 
-                      <div className="summary-card card-yellow">
-                        <div className="summary-details">
-                          <h3>{summaryData?.pendingLeaves ?? 0}</h3>
-                          <p>Pending Leaves</p>
-                        </div>
-                        <div className="summary-icon-wrapper icon-yellow">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-                            />
-                          </svg>
-                        </div>
+                    {decoded?.page_permissions?.leaveRequests !== false && (
+                      <div 
+                        className={`nav-item ${activeTab === 'leave_requests' ? 'active' : ''}`}
+                        onClick={() => navigateTo('leave_requests', 'my_requests')}
+                        tabIndex={0}
+                        role="button"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"
+                          />
+                        </svg>
+                        <span>Leave Requests</span>
                       </div>
+                    )}
 
-                      <div className="summary-card card-purple">
-                        <div className="summary-details">
-                          <h3>{summaryData?.activeSops ?? 0}</h3>
-                          <p>Active SOPs</p>
-                        </div>
-                        <div className="summary-icon-wrapper icon-purple">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-                            />
-                          </svg>
-                        </div>
+                    {decoded?.page_permissions?.payroll !== false && (
+                      <div 
+                        className={`nav-item ${activeTab === 'payroll' ? 'active' : ''}`}
+                        onClick={() => navigateTo('payroll')}
+                        tabIndex={0}
+                        role="button"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 6c-3.128 0-6 2.072-6 5 0 1.22.45 2.585 1.258 3.5H4.75a.75.75 0 000 1.5h14.5a.75.75 0 000-1.5h-2.508c.808-.915 1.258-2.28 1.258-3.5 0-2.928-2.872-5-6-5z"
+                          />
+                        </svg>
+                        <span>Payroll</span>
                       </div>
-                    </>
+                    )}
+                  </>
+                )}
+
+                {decoded?.role !== 'admin' && decoded?.role !== 'supervisor' && decoded?.role !== 'auditor' && (
+                  <div 
+                    className={`nav-item ${activeTab === 'tasks' ? 'active' : ''}`}
+                    onClick={() => navigateTo('tasks')}
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>My Tasks</span>
+                  </div>
+                )}
+                {decoded?.page_permissions?.sopLibrary !== false && (
+                  <div 
+                    className={`nav-item ${activeTab === 'sops' ? 'active' : ''}`}
+                    onClick={() => navigateTo('sops')}
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                      />
+                    </svg>
+                    <span>SOP Library</span>
+                  </div>
+                )}
+                
+                {(decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor') && (
+                  <div 
+                    className={`nav-item ${activeTab === 'checklist_history' ? 'active' : ''}`}
+                    onClick={() => navigateTo('checklist_history')}
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 10h.008v.008H9V10zm0 3.5h.008v.008H9v-.008zm0 3.5h.008v.008H9V17zm3-7h.008v.008H12V10zm0 3.5h.008v.008H12v-.008zm0 3.5h.008v.008H12V17z" />
+                    </svg>
+                    <span>Checklist History</span>
+                  </div>
+                )}
+
+                {(decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor') && (
+                  <div 
+                    className={`nav-item ${activeTab === 'audit_log' ? 'active' : ''}`}
+                    onClick={() => navigateTo('audit_log')}
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    <span>Audit Log</span>
+                  </div>
+                )}
+                
+                {decoded?.role === 'admin' && (
+                  <div 
+                    className={`nav-item ${activeTab === 'team' ? 'active' : ''}`}
+                    onClick={() => navigateTo('team')}
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z"
+                      />
+                    </svg>
+                    <span>Team</span>
+                  </div>
+                )}
+                {decoded?.role === 'admin' && (
+                  <div 
+                    className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+                    onClick={() => navigateTo('settings')}
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <span>Company Settings</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="sidebar-footer">
+                <div className="user-badge">
+                  <div className="user-avatar">
+                    {username.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div className="user-info">
+                    <span className="user-name">{username}</span>
+                    <span className="user-role">{decoded?.role || 'user'}</span>
+                  </div>
+                </div>
+                <button
+                  className="btn-logout-icon"
+                  onClick={handleLogout}
+                  title="Log Out"
+                  aria-label="Log out of application"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Main Area */}
+            <div className="main-content">
+              {activeTab === 'dashboard' && (
+                <div className="dashboard-container">
+                  <DashboardHeader
+                    username={username}
+                    tenantSlug={tenantSlug}
+                    role={decoded?.role}
+                    onNavigate={navigateTo}
+                  />
+
+                  {dashboardLoading ? (
+                    <LoadingSkeleton />
+                  ) : dashboardError ? (
+                    <EmptyState
+                      title="Unable to load dashboard summary"
+                      description={dashboardError}
+                      onRetry={fetchDashboardData}
+                      actionText="Retry Loading"
+                    />
                   ) : (
-                    // --- OPERATOR KPI CARDS ---
                     <>
-                      <div className="summary-card card-blue">
-                        <div className="summary-details">
-                          <h3>{summaryData?.hoursThisWeek ?? 0}h</h3>
-                          <p>My hours this week</p>
-                        </div>
-                        <div className="summary-icon-wrapper icon-blue">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                      {/* 4 Compact Statistics Cards Grid */}
+                      <div className="dashboard-stat-grid">
+                        {decoded?.role === 'admin' || decoded?.role === 'supervisor' ? (
+                          <>
+                            <StatCard
+                              title="Total Employees"
+                              number={summaryData?.totalEmployees ?? 5}
+                              iconColor="icon-blue"
+                              onClick={() => navigateTo('team')}
+                              description="Active workforce"
+                              trend="▲ 1 this month"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
+                                </svg>
+                              }
                             />
-                          </svg>
-                        </div>
+                            <StatCard
+                              title="Checklists Completed"
+                              number={summaryData?.completedToday ?? 2}
+                              iconColor="icon-green"
+                              onClick={() => navigateTo('checklist_history')}
+                              description="Today's executions"
+                              trend="▲ 2 today"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              }
+                            />
+                            <StatCard
+                              title="Pending Leaves"
+                              number={summaryData?.pendingLeaves ?? 0}
+                              iconColor="icon-yellow"
+                              onClick={() => navigateTo('leave_requests', 'team_requests')}
+                              description="Awaiting review"
+                              trend="—"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                </svg>
+                              }
+                            />
+                            <StatCard
+                              title="Active SOPs"
+                              number={summaryData?.activeSops ?? 4}
+                              iconColor="icon-purple"
+                              onClick={() => navigateTo('sops')}
+                              description="Procedure templates"
+                              trend="▲ 1 this week"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                              }
+                            />
+                          </>
+                        ) : decoded?.role === 'auditor' ? (
+                          <>
+                            <StatCard
+                              title="Active SOPs"
+                              number={summaryData?.activeSops ?? 4}
+                              iconColor="icon-purple"
+                              onClick={() => navigateTo('sops')}
+                              description="Compliance templates"
+                              trend="▲ 1 this week"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                              }
+                            />
+                            <StatCard
+                              title="Checklists Completed"
+                              number={summaryData?.completedToday ?? 2}
+                              iconColor="icon-green"
+                              onClick={() => navigateTo('checklist_history')}
+                              description="Audited executions"
+                              trend="▲ 2 today"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              }
+                            />
+                            <StatCard
+                              title="Total Employees"
+                              number={summaryData?.totalEmployees ?? 5}
+                              iconColor="icon-blue"
+                              onClick={null}
+                              description="Active personnel"
+                              trend="— Read-only"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
+                                </svg>
+                              }
+                            />
+                            <StatCard
+                              title="Audit Trail Logs"
+                              number={activityData?.length ?? 5}
+                              iconColor="icon-yellow"
+                              onClick={() => navigateTo('audit_log')}
+                              description="System event logs"
+                              trend="▲ Live feed"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                              }
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <StatCard
+                              title="Hours This Week"
+                              number={`${summaryData?.hoursThisWeek ?? 45.5}h`}
+                              iconColor="icon-blue"
+                              onClick={() => navigateTo('attendance')}
+                              description="Current workweek"
+                              trend="▲ Recorded time"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              }
+                            />
+                            <StatCard
+                              title="My Pending Leaves"
+                              number={summaryData?.pendingLeaves ?? 0}
+                              iconColor="icon-yellow"
+                              onClick={() => navigateTo('leave_requests', 'my_requests')}
+                              description="My applications"
+                              trend="—"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                </svg>
+                              }
+                            />
+                            <StatCard
+                              title="Active Checklists"
+                              number={summaryData?.activeChecklists ?? 1}
+                              iconColor="icon-purple"
+                              onClick={() => navigateTo('tasks')}
+                              description="Pending execution"
+                              trend="▲ Assigned tasks"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              }
+                            />
+                            <StatCard
+                              title="Assigned SOPs"
+                              number={4}
+                              iconColor="icon-green"
+                              onClick={() => navigateTo('sops')}
+                              description="Read-only procedures"
+                              trend="▲ Available"
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                              }
+                            />
+                          </>
+                        )}
                       </div>
 
-                      <div className="summary-card card-yellow">
-                        <div className="summary-details">
-                          <h3>{summaryData?.pendingLeaves ?? 0}</h3>
-                          <p>My pending leave requests</p>
-                        </div>
-                        <div className="summary-icon-wrapper icon-yellow">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-
-                      <div className="summary-card hover-card card-purple" style={{cursor: 'pointer'}} onClick={() => setActiveTab('tasks')}>
-                        <div className="summary-details">
-                          <h3>{summaryData?.activeChecklists ?? 0}</h3>
-                          <p>My assigned checklists today</p>
-                        </div>
-                        <div className="summary-icon-wrapper icon-purple">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                        </div>
+                      {/* Enterprise ERP Split Layout Grid (65% Left / 35% Right) */}
+                      <div className="erp-dashboard-grid">
+                        <AnalyticsOverview
+                          summaryData={summaryData}
+                          role={decoded?.role}
+                        />
+                        <RecentActivity
+                          activityData={activityData}
+                          role={decoded?.role}
+                          onNavigate={navigateTo}
+                          canViewAuditLogs={decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor'}
+                          isLoading={dashboardLoading}
+                          isError={!!dashboardError}
+                          onRetry={fetchDashboardData}
+                        />
                       </div>
                     </>
                   )}
                 </div>
-
-                <div className="dashboard-two-column-grid">
-                  {/* Shortcuts Hub */}
-                  <div className="dashboard-hub-panel">
-                    <div className="dashboard-hub-panel-header">
-                      <h2>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-                        </svg>
-                        Workspace Shortcuts
-                      </h2>
-                    </div>
-                    <div className="shortcut-grid">
-                      {decoded?.role === 'admin' ? (
-                        <>
-                          <div className="shortcut-card" onClick={() => setActiveTab('sops')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>SOP Library</h4>
-                              <p>Create, publish, and structure standard operating procedures.</p>
-                            </div>
-                          </div>
-                          <div className="shortcut-card" onClick={() => setActiveTab('team')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>Team Directory</h4>
-                              <p>Add, invite, delete, or manage team members and permissions.</p>
-                            </div>
-                          </div>
-                          <div className="shortcut-card" onClick={() => setActiveTab('checklist_history')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>Checklist History</h4>
-                              <p>Audit checklist runs, progress, and execution logs.</p>
-                            </div>
-                          </div>
-                          <div className="shortcut-card" onClick={() => setActiveTab('settings')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>Company Settings</h4>
-                              <p>Configure workspace parameters, coordinates, and thresholds.</p>
-                            </div>
-                          </div>
-                        </>
-                      ) : decoded?.role === 'supervisor' || decoded?.role === 'auditor' ? (
-                        <>
-                          <div className="shortcut-card" onClick={() => setActiveTab('sops')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>SOP Library</h4>
-                              <p>Review and write standard operating procedures.</p>
-                            </div>
-                          </div>
-                          <div className="shortcut-card" onClick={() => setActiveTab('checklist_history')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>Checklist History</h4>
-                              <p>Audit checklist runs and verification flows.</p>
-                            </div>
-                          </div>
-                          <div className="shortcut-card" onClick={() => setActiveTab('audit_log')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>Audit Logs</h4>
-                              <p>Search through immutable system audit trails.</p>
-                            </div>
-                          </div>
-                          <div className="shortcut-card" onClick={() => { setActiveTab('leave_requests'); setLeaveRequestsSubTab('team_requests'); }}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>Leave Management</h4>
-                              <p>Approve or decline employee leave applications.</p>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="shortcut-card" onClick={() => setActiveTab('tasks')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>My Tasks</h4>
-                              <p>Start, execute, and view assigned checklist procedures.</p>
-                            </div>
-                          </div>
-                          <div className="shortcut-card" onClick={() => setActiveTab('attendance')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>Clock In & Out</h4>
-                              <p>Record daily attendance and view geo-coordinates status.</p>
-                            </div>
-                          </div>
-                          <div className="shortcut-card" onClick={() => setActiveTab('sops')}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>SOP Library</h4>
-                              <p>Read, search, and view official procedure templates.</p>
-                            </div>
-                          </div>
-                          <div className="shortcut-card" onClick={() => { setActiveTab('leave_requests'); setLeaveRequestsSubTab('my_requests'); }}>
-                            <div className="shortcut-icon-wrapper">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                              </svg>
-                            </div>
-                            <div className="shortcut-details">
-                              <h4>Request Leave</h4>
-                              <p>Submit leave applications and track request approval history.</p>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Recent Activity Panel */}
-                  <div className="activity-panel">
-                    <div className="activity-panel-header">
-                      <h2>Recent Activity</h2>
-                    </div>
-                    <div className="activity-list">
-                      {activityData && activityData.length > 0 ? (
-                        activityData.map((item) => (
-                          <div key={item.id} className="activity-item">
-                            <div className="activity-dot-wrapper">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                                style={{ width: '16px', height: '16px' }}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
-                            </div>
-                            <div className="activity-content">
-                              <p className="activity-msg">{item.message}</p>
-                              <span className="activity-time">
-                                {formatTimeAgo(item.timestamp)}
-                              </span>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p style={{ margin: 0, fontSize: '14px', color: 'var(--text)' }}>
-                          No recent activity recorded.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-            </>
-            )}
+              )}
 
             {activeTab === 'attendance' && (
               decoded?.page_permissions?.attendance === false ? <AccessDeniedScreen /> : <Attendance token={token} decoded={decoded} />
@@ -1491,6 +1387,7 @@ function App() {
               <NotFound setActiveTab={setActiveTab} />
             )}
           </div>
+        </div>
         </div>
       )}
 

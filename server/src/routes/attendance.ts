@@ -19,22 +19,62 @@ function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: num
   return R * c;
 }
 
+// Helper: UTC start and end bounds for a calendar workday
+function getWorkdayBounds(d: Date = new Date()) {
+  const start = new Date(d);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(d);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
 /**
  * POST /attendance/check-in
  * Body: { lat, lng, accuracy }
  */
 router.post('/attendance/check-in', authenticateUser, setTenantContext, async (req, res, next) => {
   const { lat, lng, accuracy } = req.body;
+  const userId = req.user!.userId;
+  const tenantId = req.user!.tenantId;
 
   if (lat === undefined || lng === undefined) {
     return res.status(400).json({ error: 'Missing coordinates (lat, lng)' });
   }
 
   try {
-    // 1. Fetch tenant to see if an office location is configured
-    // Since tenants table does not have RLS policies, we use raw basePrisma or getPrisma
+    // 1. Check if an active open session exists (check_out_at is null)
+    const activeLog = await getPrisma().attendance_logs.findFirst({
+      where: {
+        user_id: userId,
+        check_out_at: null
+      }
+    });
+
+    if (activeLog) {
+      return res.status(409).json({ error: 'Active attendance session already exists' });
+    }
+
+    // 2. Check if employee has already checked in on today's workday
+    const now = new Date();
+    const { start: todayStart, end: todayEnd } = getWorkdayBounds(now);
+
+    const existingTodayLog = await getPrisma().attendance_logs.findFirst({
+      where: {
+        user_id: userId,
+        check_in_at: {
+          gte: todayStart,
+          lte: todayEnd
+        }
+      }
+    });
+
+    if (existingTodayLog) {
+      return res.status(409).json({ error: 'Attendance already completed for today' });
+    }
+
+    // 3. Office location radius check
     const tenant = await getPrisma().tenants.findUnique({
-      where: { id: req.user!.tenantId }
+      where: { id: tenantId }
     });
 
     if (!tenant) {
@@ -44,7 +84,7 @@ router.post('/attendance/check-in', authenticateUser, setTenantContext, async (r
     if (tenant.location_lat !== null && tenant.location_lng !== null) {
       const officeLat = tenant.location_lat;
       const officeLng = tenant.location_lng;
-      const allowedRadius = tenant.location_radius_m ?? 200; // Default to 200m
+      const allowedRadius = tenant.location_radius_m ?? 200;
 
       const distance = getDistanceInMeters(lat, lng, officeLat, officeLng);
       if (distance > allowedRadius) {
@@ -54,12 +94,12 @@ router.post('/attendance/check-in', authenticateUser, setTenantContext, async (r
       }
     }
 
-    // 2. Insert attendance log row
+    // 4. Create new attendance log
     const log = await getPrisma().attendance_logs.create({
       data: {
-        tenant_id: req.user!.tenantId,
-        user_id: req.user!.userId,
-        check_in_at: new Date(),
+        tenant_id: tenantId,
+        user_id: userId,
+        check_in_at: now,
         check_in_lat: lat,
         check_in_lng: lng,
         check_in_accuracy_m: accuracy || null
@@ -78,12 +118,15 @@ router.post('/attendance/check-in', authenticateUser, setTenantContext, async (r
  */
 router.post('/attendance/check-out', authenticateUser, setTenantContext, async (req, res, next) => {
   const { lat, lng, accuracy } = req.body;
+  const userId = req.user!.userId;
+  const now = new Date();
+  const { start: todayStart, end: todayEnd } = getWorkdayBounds(now);
 
   try {
-    // 1. Find user's active check-in (where check_out_at is null)
+    // 1. Find user's active open check-in session
     const activeLog = await getPrisma().attendance_logs.findFirst({
       where: {
-        user_id: req.user!.userId,
+        user_id: userId,
         check_out_at: null
       },
       orderBy: {
@@ -92,14 +135,38 @@ router.post('/attendance/check-out', authenticateUser, setTenantContext, async (
     });
 
     if (!activeLog) {
-      return res.status(400).json({ error: 'No active check-in session found. You must check-in first.' });
+      // Check if attendance was already checked out today
+      const completedTodayLog = await getPrisma().attendance_logs.findFirst({
+        where: {
+          user_id: userId,
+          check_in_at: {
+            gte: todayStart,
+            lte: todayEnd
+          },
+          check_out_at: {
+            not: null
+          }
+        }
+      });
+
+      if (completedTodayLog) {
+        return res.status(409).json({ error: 'Attendance session already checked out' });
+      }
+
+      return res.status(400).json({ error: 'No active attendance session found' });
     }
 
-    // 2. Update existing row with check-out info
+    // 2. Validate timestamp ordering
+    const checkInTime = new Date(activeLog.check_in_at).getTime();
+    if (now.getTime() < checkInTime) {
+      return res.status(400).json({ error: 'Checkout timestamp cannot be earlier than check-in' });
+    }
+
+    // 3. Update existing active log with check-out info
     const updatedLog = await getPrisma().attendance_logs.update({
       where: { id: activeLog.id },
       data: {
-        check_out_at: new Date(),
+        check_out_at: now,
         check_out_lat: lat !== undefined ? lat : null,
         check_out_lng: lng !== undefined ? lng : null,
         check_out_accuracy_m: accuracy !== undefined ? accuracy : null

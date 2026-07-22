@@ -41,12 +41,6 @@ const Payroll = ({ token, decoded }) => {
     return 'Rs. ' + Number(rate).toFixed(2) + ' / hr';
   };
 
-  useEffect(() => {
-    if (periodStart && periodEnd) {
-      fetchPayroll();
-    }
-  }, [token, periodStart, periodEnd]);
-
   const fetchPayroll = async () => {
     if (!periodStart || !periodEnd) return;
     setLoading(true);
@@ -78,6 +72,12 @@ const Payroll = ({ token, decoded }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (periodStart && periodEnd) {
+      fetchPayroll();
+    }
+  }, [token, periodStart, periodEnd]);
 
   const handleExportCSV = () => {
     if (!payrollData || !payrollData.employees) return;
