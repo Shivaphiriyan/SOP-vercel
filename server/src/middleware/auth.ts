@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma, tenantStorage } from '../context';
+import { config } from '../config';
 
 export interface UserPayload {
   userId: string;
@@ -17,8 +18,6 @@ declare global {
   }
 }
 
-const getJwtSecret = () => process.env.JWT_SECRET || 'replace-this-with-a-long-random-string';
-
 /**
  * Middleware to authenticate user JWT token.
  * Attaches decoded payload (userId, tenantId, role) to req.user.
@@ -31,7 +30,7 @@ export const authenticateUser = (req: Request, res: Response, next: NextFunction
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, getJwtSecret()) as UserPayload;
+    const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
     req.user = decoded;
     next();
   } catch (error) {
@@ -61,6 +60,19 @@ export const setTenantContext = async (req: Request, res: Response, next: NextFu
     await prisma.$transaction(async (tx) => {
       // 1. Run SET LOCAL app.current_tenant inside this transaction connection
       await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant = '${tenantId}'`);
+
+      // 2. Verify user still exists and is active
+      if (req.user?.userId) {
+        const currentUser = await tx.users.findUnique({
+          where: { id: req.user.userId },
+          select: { id: true, status: true }
+        });
+
+        if (!currentUser || currentUser.status !== 'active') {
+          res.status(401).json({ error: 'User account is inactive or disabled' });
+          return;
+        }
+      }
 
       // 2. Wrap the execution of subsequent handlers in a Promise
       await new Promise<void>((resolve, reject) => {

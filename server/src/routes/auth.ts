@@ -3,9 +3,9 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma, getPrisma } from '../context';
 import { authenticateUser, setTenantContext } from '../middleware/auth';
+import { config } from '../config';
 
 const router = Router();
-const getJwtSecret = () => process.env.JWT_SECRET || 'replace-this-with-a-long-random-string';
 
 // Helper to slugify tenant name for comparison
 const slugify = (text: string) => {
@@ -56,6 +56,10 @@ router.post('/auth/login', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
+    if (user.status !== 'active') {
+      return res.status(401).json({ error: 'Account is disabled' });
+    }
+
     // 3. Verify password with bcrypt
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     if (!passwordMatch) {
@@ -70,7 +74,7 @@ router.post('/auth/login', async (req, res, next) => {
         role: user.role,
         page_permissions: user.page_permissions as any
       },
-      getJwtSecret(),
+      config.jwtSecret,
       { expiresIn: '24h' }
     );
 
@@ -140,7 +144,7 @@ router.post('/auth/signup', async (req, res, next) => {
         role: newUser.role,
         page_permissions: newUser.page_permissions as any
       },
-      getJwtSecret(),
+      config.jwtSecret,
       { expiresIn: '24h' }
     );
 
@@ -183,18 +187,20 @@ router.get('/me', authenticateUser, setTenantContext, async (req, res, next) => 
   }
 });
 
-/**
- * GET /test-no-context
- * Public route that queries users WITHOUT setting any tenant context.
- * Used to verify the RLS "fail closed" behavior (should return zero rows).
- */
-router.get('/test-no-context', async (req, res, next) => {
-  try {
-    const users = await getPrisma().users.findMany();
-    res.json(users);
-  } catch (error) {
-    next(error);
-  }
-});
+if (!config.isProduction) {
+  /**
+   * GET /test-no-context
+   * Development-only route that queries users WITHOUT setting any tenant context.
+   * Used to verify the RLS "fail closed" behavior (should return zero rows).
+   */
+  router.get('/test-no-context', async (req, res, next) => {
+    try {
+      const users = await getPrisma().users.findMany();
+      res.json(users);
+    } catch (error) {
+      next(error);
+    }
+  });
+}
 
 export default router;

@@ -9,6 +9,7 @@ import Payroll from './Payroll';
 import SopLibrary from './SopLibrary';
 import MyTasks from './MyTasks';
 import ChecklistRun from './ChecklistRun';
+import NotFound from './NotFound';
 
 // Native JWT helper to decode payload without external packages
 const parseJwt = (token) => {
@@ -270,9 +271,15 @@ function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
+      if (!hash) {
+        setActiveTab('dashboard');
+        return;
+      }
       const validTabs = ['dashboard', 'attendance', 'leave_requests', 'payroll', 'sops', 'tasks', 'checklist_history', 'audit_log', 'team', 'settings'];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
+      } else {
+        setActiveTab('not_found');
       }
     };
 
@@ -1477,6 +1484,10 @@ function App() {
 
             {activeTab === 'settings' && decoded?.role === 'admin' && (
               <Settings token={token} />
+            )}
+
+            {activeTab === 'not_found' && (
+              <NotFound setActiveTab={setActiveTab} />
             )}
           </div>
         </div>

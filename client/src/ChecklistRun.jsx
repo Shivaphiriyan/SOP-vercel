@@ -1,6 +1,77 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChecklistRun.css';
 
+const getEvidenceUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `http://localhost:5000${url}`;
+};
+
+const compressImageIfNeeded = (file, maxSizeInBytes = 800 * 1024) => {
+  if (file.size <= maxSizeInBytes) {
+    return Promise.resolve(file);
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        const maxDimension = 1920;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        let quality = 0.82;
+        const attemptCompress = () => {
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                if (blob.size > maxSizeInBytes && quality > 0.35) {
+                  quality -= 0.15;
+                  attemptCompress();
+                } else {
+                  const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                  });
+                  resolve(compressedFile);
+                }
+              } else {
+                resolve(file);
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        attemptCompress();
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+};
+
 const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) => {
   let userRole = decoded?.role;
   if (!userRole && token) {
@@ -205,10 +276,15 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
     const previewUrl = URL.createObjectURL(file);
     setPreviewUrls(prev => ({ ...prev, [stepId]: previewUrl }));
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
+      // Compress image if larger than 800KB
+      const fileToUpload = file.size > 800 * 1024 
+        ? await compressImageIfNeeded(file, 800 * 1024) 
+        : file;
+
+      const formData = new FormData();
+      formData.append('file', fileToUpload);
+
       const res = await fetch('http://localhost:5000/uploads', {
         method: 'POST',
         headers: {
@@ -427,7 +503,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
                     {requiresPhoto && !isCompleted && !isAuditor && (previewUrls[step.id] || step.evidence_url) && (
                       <div style={{ marginTop: '8px', marginBottom: '8px' }}>
                         <img 
-                          src={previewUrls[step.id] || `http://localhost:5000${step.evidence_url}`} 
+                          src={previewUrls[step.id] || getEvidenceUrl(step.evidence_url)} 
                           alt="Evidence preview" 
                           style={{
                             maxWidth: '120px',
@@ -518,7 +594,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
                               Photo Evidence:
                             </div>
                             <img 
-                              src={`http://localhost:5000${step.evidence_url}`} 
+                              src={getEvidenceUrl(step.evidence_url)} 
                               alt="Step Evidence" 
                               style={{
                                 maxWidth: '100%',

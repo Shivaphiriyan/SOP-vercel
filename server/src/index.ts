@@ -1,7 +1,10 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import path from 'path';
 import multer from 'multer';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { config } from './config';
 import { getPrisma } from './context';
 import authRouter from './routes/auth';
 import sopsRouter from './routes/sops';
@@ -12,28 +15,57 @@ import dashboardRouter from './routes/dashboard';
 import adminRouter from './routes/admin';
 import { authenticateUser, setTenantContext } from './middleware/auth';
 import { saveEvidencePhoto } from './utils/upload';
-
-// Load environment variables from .env file
-dotenv.config();
+import { errorHandler } from './middleware/error';
 
 const app = express();
-const port = process.env.PORT || 5000;
+
+// Apply essential security headers
+app.use(helmet());
+
+// Configure secure CORS
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like server-to-server or curl requests)
+      if (!origin) return callback(null, true);
+      if (config.frontendUrls.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  })
+);
+
+// Apply general API rate limiter
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 1000,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP, please try again later.' }
+});
+app.use(apiLimiter);
+
+// Stricter rate limiter for login and signup routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 50,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts, please try again later.' }
+});
+app.use('/auth/login', authLimiter);
+app.use('/auth/signup', authLimiter);
+
+// Body parser limits
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Serve static uploads
 app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));
-
-// Set up CORS headers
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
-app.use(express.json());
 
 // Register authentication, user, and SOP execution routes
 app.use('/', authRouter);
@@ -85,26 +117,30 @@ app.post('/uploads', authenticateUser, setTenantContext, (req, res, next) => {
   });
 });
 
-// Basic health check endpoint
+// Minimal health check endpoint
 app.get('/health', async (req, res) => {
   try {
-    // Simple query to verify DB connection (uses getPrisma context helper)
-    const tenantCount = await getPrisma().tenants.count();
+    await getPrisma().$queryRaw`SELECT 1`;
     res.json({
       status: 'OK',
-      database: 'Connected',
-      tenantsCount: tenantCount,
-      timestamp: new Date().toISOString()
+      database: 'Connected'
     });
   } catch (error) {
     res.status(500).json({
       status: 'ERROR',
-      database: 'Disconnected',
-      error: error instanceof Error ? error.message : String(error)
+      database: 'Disconnected'
     });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+// Catch-all 404 handler for API routes that don't match
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Global error handler middleware (must be registered after all routes and handlers)
+app.use(errorHandler);
+
+app.listen(config.port, () => {
+  console.log(`Server running on http://localhost:${config.port}`);
 });
