@@ -16,6 +16,7 @@ import DashboardHeader from './components/Dashboard/DashboardHeader';
 import StatCard from './components/Dashboard/StatCard';
 import AnalyticsOverview from './components/Dashboard/AnalyticsOverview';
 import RecentActivity from './components/Dashboard/RecentActivity';
+import LoadingSkeleton from './components/Dashboard/LoadingSkeleton';
 import EmptyState from './components/Dashboard/EmptyState';
 import ThemeToggle from './components/ThemeToggle';
 import NotificationBell from './components/Notifications/NotificationBell';
@@ -161,8 +162,12 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navigateTo = (tab, subTab = null) => {
-    setActiveTab(tab);
-    if (subTab && tab === 'leave_requests') {
+    let targetTab = tab;
+    if (targetTab === 'audit-logs' || targetTab === 'audit_logs') {
+      targetTab = 'audit_log';
+    }
+    setActiveTab(targetTab);
+    if (subTab && targetTab === 'leave_requests') {
       setLeaveRequestsSubTab(subTab);
     }
     setIsSidebarOpen(false);
@@ -292,12 +297,28 @@ function App() {
   // Handle URL hash routing
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
+      let hash = window.location.hash.replace('#', '').trim();
       if (!hash) {
         setActiveTab('dashboard');
         return;
       }
-      const validTabs = ['dashboard', 'attendance', 'leave_requests', 'payroll', 'sops', 'tasks', 'checklist_history', 'audit_log', 'team', 'settings'];
+      if (hash === 'audit-logs' || hash === 'audit_logs') {
+        hash = 'audit_log';
+      }
+      const validTabs = [
+        'dashboard',
+        'attendance',
+        'leave_requests',
+        'payroll',
+        'notifications',
+        'sops',
+        'tasks',
+        'checklist_history',
+        'audit_log',
+        'audit-logs',
+        'team',
+        'settings'
+      ];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
       } else {
