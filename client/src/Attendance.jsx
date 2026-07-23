@@ -15,26 +15,7 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-import { formatDuration, getWorkweekBounds } from './utils/attendance';
-
-// Helper for today's calendar workday bounds
-const getTodayBounds = (date = new Date()) => {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(date);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
-};
-
-// Safe timestamp duration calculator
-const calculateDurationSec = (checkInStr, checkOutStr, currentTime = new Date()) => {
-  if (!checkInStr) return 0;
-  const start = new Date(checkInStr).getTime();
-  const end = checkOutStr ? new Date(checkOutStr).getTime() : currentTime.getTime();
-  const diffMs = end - start;
-  if (isNaN(diffMs) || diffMs <= 0) return 0;
-  return Math.floor(diffMs / 1000);
-};
+import { formatDuration, getWorkweekBounds, calculateAttendanceDurationSec, getTodayBounds } from './utils/attendance';
 
 // Auto bounds controller for Leaflet map
 function MapBoundsController({ location, officeLocation, isOutside }) {
@@ -260,9 +241,9 @@ export default function Attendance({ token, decoded }) {
 
   // Duration calculations
   const todayDurationSec = isCheckedIn
-    ? calculateDurationSec(activeCheckIn.check_in_at, null, currentTime)
+    ? calculateAttendanceDurationSec(activeCheckIn.check_in_at, null, { allowLive: true, currentTime })
     : todayCompletedLog
-    ? calculateDurationSec(todayCompletedLog.check_in_at, todayCompletedLog.check_out_at, currentTime)
+    ? calculateAttendanceDurationSec(todayCompletedLog.check_in_at, todayCompletedLog.check_out_at)
     : 0;
 
   const { start: weekStart, end: weekEnd } = getWorkweekBounds(currentTime);
@@ -270,7 +251,8 @@ export default function Attendance({ token, decoded }) {
   attendanceData.forEach((log) => {
     const checkIn = new Date(log.check_in_at);
     if (checkIn >= weekStart && checkIn <= weekEnd) {
-      weeklyDurationSec += calculateDurationSec(log.check_in_at, log.check_out_at, currentTime);
+      const isLive = !log.check_out_at && log.id === activeCheckIn?.id;
+      weeklyDurationSec += calculateAttendanceDurationSec(log.check_in_at, log.check_out_at, { allowLive: isLive, currentTime });
     }
   });
 
@@ -283,7 +265,8 @@ export default function Attendance({ token, decoded }) {
   attendanceData.forEach((log) => {
     const d = new Date(log.check_in_at);
     if (d.getMonth() === nowMonth && d.getFullYear() === nowYear) {
-      monthlyDurationSec += calculateDurationSec(log.check_in_at, log.check_out_at, currentTime);
+      const isLive = !log.check_out_at && log.id === activeCheckIn?.id;
+      monthlyDurationSec += calculateAttendanceDurationSec(log.check_in_at, log.check_out_at, { allowLive: isLive, currentTime });
       presentDaysCount += 1;
     }
   });
@@ -558,7 +541,7 @@ export default function Attendance({ token, decoded }) {
             </div>
             <span className="summary-title">This Month</span>
           </div>
-          <span className="summary-value">{formatDuration(monthlyDurationSec || 124 * 3600 + 20 * 60)}</span>
+          <span className="summary-value">{formatDuration(monthlyDurationSec)}</span>
           <span className="summary-sub">Total Working Hours</span>
           <div className="sparkline-container">
             <svg viewBox="0 0 100 20" className="sparkline-svg">
@@ -576,7 +559,7 @@ export default function Attendance({ token, decoded }) {
             </div>
             <span className="summary-title">Present Days</span>
           </div>
-          <span className="summary-value">{presentDaysCount || 18} days</span>
+          <span className="summary-value">{presentDaysCount} days</span>
           <span className="summary-sub">This Month</span>
           <div className="sparkline-container">
             <svg viewBox="0 0 100 20" className="sparkline-svg">
@@ -594,7 +577,7 @@ export default function Attendance({ token, decoded }) {
             </div>
             <span className="summary-title">Average Daily Hours</span>
           </div>
-          <span className="summary-value">{formatDuration(avgDailySec || 7 * 3600 + 45 * 60)}</span>
+          <span className="summary-value">{formatDuration(avgDailySec)}</span>
           <span className="summary-sub">This Month</span>
           <div className="sparkline-container">
             <svg viewBox="0 0 100 20" className="sparkline-svg">
@@ -664,7 +647,7 @@ export default function Attendance({ token, decoded }) {
             <tbody>
               {paginatedHistory.map((log) => {
                 const isWorking = !log.check_out_at;
-                const durationSec = calculateDurationSec(log.check_in_at, log.check_out_at, currentTime);
+                const durationSec = calculateAttendanceDurationSec(log.check_in_at, log.check_out_at, { allowLive: isWorking, currentTime });
                 return (
                   <tr key={log.id}>
                     <td className="font-semibold">{formatDateReadable(log.check_in_at)}</td>

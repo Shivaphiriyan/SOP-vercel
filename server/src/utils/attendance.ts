@@ -1,8 +1,17 @@
+export interface DurationOptions {
+  currentTime?: Date;
+  allowLive?: boolean;
+}
+
 /**
  * Calculates duration in milliseconds between two complete timestamps.
  * Returns 0 and logs a dev warning for invalid timestamps or negative timestamp ordering.
  */
-export const calculateAttendanceDurationMs = (checkInInput, checkOutInput, options = {}) => {
+export function calculateAttendanceDurationMs(
+  checkInInput: string | Date | null | undefined,
+  checkOutInput?: string | Date | null | undefined,
+  options: DurationOptions = {}
+): number {
   if (!checkInInput) {
     return 0;
   }
@@ -13,7 +22,7 @@ export const calculateAttendanceDurationMs = (checkInInput, checkOutInput, optio
     return 0;
   }
 
-  let checkOut;
+  let checkOut: Date;
   if (checkOutInput !== null && checkOutInput !== undefined) {
     checkOut = new Date(checkOutInput);
     if (isNaN(checkOut.getTime())) {
@@ -39,15 +48,19 @@ export const calculateAttendanceDurationMs = (checkInInput, checkOutInput, optio
   }
 
   return diffMs;
-};
+}
 
 /**
  * Calculates duration in seconds between two complete timestamps.
  */
-export const calculateAttendanceDurationSec = (checkInInput, checkOutInput, options = {}) => {
+export function calculateAttendanceDurationSec(
+  checkInInput: string | Date | null | undefined,
+  checkOutInput?: string | Date | null | undefined,
+  options: DurationOptions = {}
+): number {
   const ms = calculateAttendanceDurationMs(checkInInput, checkOutInput, options);
   return Math.floor(ms / 1000);
-};
+}
 
 /**
  * Format seconds into concise human-readable duration:
@@ -58,7 +71,7 @@ export const calculateAttendanceDurationSec = (checkInInput, checkOutInput, opti
  * - 8h 30m
  * - 9h 22m
  */
-export const formatDuration = (seconds) => {
+export function formatDuration(seconds: number | null | undefined): string {
   if (seconds === null || seconds === undefined || seconds <= 0 || isNaN(seconds)) {
     return '0m';
   }
@@ -76,12 +89,12 @@ export const formatDuration = (seconds) => {
     return `${hours}h`;
   }
   return `${hours}h ${mins < 10 ? '0' : ''}${mins}m`;
-};
+}
 
 /**
  * Helper to calculate Monday 00:00:00 to Sunday 23:59:59 workweek bounds
  */
-export const getWorkweekBounds = (date = new Date()) => {
+export function getWorkweekBounds(date: Date | string = new Date()) {
   const now = new Date(date);
   const dayOfWeek = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
   const distanceToMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -95,15 +108,15 @@ export const getWorkweekBounds = (date = new Date()) => {
   sun.setHours(23, 59, 59, 999);
 
   return { start: mon, end: sun };
-};
+}
 
 /**
- * Helper to calculate workday bounds
+ * Helper: UTC/Local workday bounds
  */
-export const getTodayBounds = (date = new Date()) => {
-  const start = new Date(date);
+export function getWorkdayBounds(d: Date | string = new Date()) {
+  const start = new Date(d);
   start.setHours(0, 0, 0, 0);
-  const end = new Date(date);
+  const end = new Date(d);
   end.setHours(23, 59, 59, 999);
   return { start, end };
-};
+}

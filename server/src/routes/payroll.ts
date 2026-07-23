@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getPrisma } from '../context';
 import { authenticateUser, setTenantContext, requireRole } from '../middleware/auth';
+import { calculateAttendanceDurationMs } from '../utils/attendance';
 
 const router = Router();
 
@@ -81,14 +82,8 @@ router.get(
         const userLogs = attendanceLogs.filter((log) => log.user_id === user.id);
         let totalHours = 0;
         for (const log of userLogs) {
-          if (log.check_out_at) {
-            const checkIn = new Date(log.check_in_at).getTime();
-            const checkOut = new Date(log.check_out_at).getTime();
-            const diffMs = checkOut - checkIn;
-            if (diffMs > 0) {
-              totalHours += diffMs / (1000 * 60 * 60);
-            }
-          }
+          const diffMs = calculateAttendanceDurationMs(log.check_in_at, log.check_out_at);
+          totalHours += diffMs / (1000 * 60 * 60);
         }
         const regularHours = Math.round(totalHours * 100) / 100;
 

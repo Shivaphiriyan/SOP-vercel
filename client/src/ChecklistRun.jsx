@@ -77,6 +77,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
   let userRole = decoded?.role;
   if (!userRole && token) {
     try {
+      // Token parsing attempt if needed
     } catch (_e) {
       // Ignore token parse error
     }

@@ -12,6 +12,7 @@ model attendance_logs {
   id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id            String    @db.Uuid
   user_id              String    @db.Uuid
+  work_date            DateTime  @default(now()) @db.Date
   check_in_at          DateTime  @default(now()) @db.Timestamptz(6)
   check_in_lat         Float?
   check_in_lng         Float?
@@ -23,33 +24,76 @@ model attendance_logs {
   tenants              tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users                users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  @@unique([tenant_id, user_id, work_date], map: "unique_tenant_user_work_date")
   @@index([tenant_id], map: "idx_attendance_logs_tenant")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model audit_logs {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id  String   @db.Uuid
-  user_id    String   @db.Uuid
-  action     String
-  metadata   Json     @default("{}")
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  tenants    tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id            String   @db.Uuid
+  actor_user_id        String?  @db.Uuid
+  actor_name_snapshot  String?
+  actor_email_snapshot String?
+  action               String
+  entity_type          String   @default("system")
+  entity_id            String?
+  description          String   @default("")
+  old_values           Json?
+  new_values           Json?
+  metadata             Json?    @default("{}")
+  ip_address           String?
+  user_agent           String?
+  request_method       String?
+  request_path         String?
+  status               String   @default("success")
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  tenants              tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  actor_user           users?   @relation("audit_logs_actor", fields: [actor_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
-  @@index([tenant_id], map: "idx_audit_logs_tenant")
+  @@index([tenant_id, created_at], map: "idx_audit_logs_tenant_created")
+  @@index([tenant_id, actor_user_id], map: "idx_audit_logs_tenant_actor")
+  @@index([tenant_id, action], map: "idx_audit_logs_tenant_action")
+  @@index([tenant_id, entity_type, entity_id], map: "idx_audit_logs_tenant_entity")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notifications {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String    @db.Uuid
+  recipient_user_id String    @db.Uuid
+  actor_user_id     String?   @db.Uuid
+  type              String
+  title             String
+  message           String
+  entity_type       String?
+  entity_id         String?
+  action_url        String?
+  metadata          Json?     @default("{}")
+  is_read           Boolean   @default(false)
+  read_at           DateTime? @db.Timestamptz(6)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  tenants        tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  recipient_user users   @relation("notifications_recipient", fields: [recipient_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  actor_user     users?  @relation("notifications_actor", fields: [actor_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([tenant_id, recipient_user_id, created_at], map: "idx_notifications_tenant_recipient_created")
+  @@index([tenant_id, recipient_user_id, is_read], map: "idx_notifications_tenant_recipient_read")
+  @@index([tenant_id, type], map: "idx_notifications_tenant_type")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model checklist_runs {
-  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id     String        @db.Uuid
-  sop_id        String        @db.Uuid
-  operator_id   String        @db.Uuid
-  status        String        @default("in_progress")
-  started_at    DateTime      @default(now()) @db.Timestamptz(6)
-  completed_at  DateTime?     @db.Timestamptz(6)
+  id                          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                   String        @db.Uuid
+  sop_id                      String        @db.Uuid
+  operator_id                 String        @db.Uuid
+  status                      String        @default("in_progress")
+  started_at                  DateTime      @default(now()) @db.Timestamptz(6)
+  completed_at                DateTime?     @db.Timestamptz(6)
   users                       users         @relation(fields: [operator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sop_templates               sop_templates @relation(fields: [sop_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   tenants                     tenants       @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -119,22 +163,23 @@ model steps {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model tenants {
-  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String
-  plan_tier       String            @default("starter")
-  billing_status  String            @default("trial")
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  plan_tier         String            @default("starter")
+  billing_status    String            @default("trial")
   location_lat      Float?
   location_lng      Float?
   location_radius_m Float?
   leave_notice_days Int               @default(3)
-  created_at      DateTime          @default(now()) @db.Timestamptz(6)
-  attendance_logs attendance_logs[]
-  audit_logs      audit_logs[]
-  checklist_runs  checklist_runs[]
-  leave_requests  leave_requests[]
-  sop_templates   sop_templates[]
-  steps           steps[]
-  users           users[]
+  created_at        DateTime          @default(now()) @db.Timestamptz(6)
+  attendance_logs   attendance_logs[]
+  audit_logs        audit_logs[]
+  notifications     notifications[]
+  checklist_runs    checklist_runs[]
+  leave_requests    leave_requests[]
+  sop_templates     sop_templates[]
+  steps             steps[]
+  users             users[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -150,7 +195,9 @@ model users {
   created_at                                       DateTime          @default(now()) @db.Timestamptz(6)
   page_permissions                                 Json              @default("{}")
   attendance_logs                                  attendance_logs[]
-  audit_logs                                       audit_logs[]
+  audit_logs_performed                             audit_logs[]      @relation("audit_logs_actor")
+  notifications_received                           notifications[]   @relation("notifications_recipient")
+  notifications_sent                               notifications[]   @relation("notifications_actor")
   checklist_runs                                   checklist_runs[]
   leave_requests_leave_requests_reviewed_byTousers leave_requests[]  @relation("leave_requests_reviewed_byTousers")
   leave_requests_leave_requests_user_idTousers     leave_requests[]  @relation("leave_requests_user_idTousers")

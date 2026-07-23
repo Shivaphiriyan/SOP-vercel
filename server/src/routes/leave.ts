@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { getPrisma } from '../context';
 import { authenticateUser, setTenantContext, requireRole } from '../middleware/auth';
+import { createAuditLog } from '../services/audit.service';
+import { createNotification, createRoleNotification } from '../services/notification.service';
 
 const router = Router();
 
@@ -64,22 +66,34 @@ router.post('/leave-requests', authenticateUser, setTenantContext, async (req, r
       }
     });
 
-    // Log emergency requests distinctly in audit_logs
-    if (isEmergencyBool) {
-      await getPrisma().audit_logs.create({
-        data: {
-          tenant_id: req.user!.tenantId,
-          user_id: req.user!.userId,
-          action: 'leave.emergency_requested',
-          metadata: {
-            leaveRequestId: request.id,
-            startDate: startDate,
-            endDate: endDate,
-            reason: reason || null
-          }
-        }
-      });
-    }
+    // Create Audit Log
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: isEmergencyBool ? 'leave.emergency_requested' : 'leave.submitted',
+        entityType: 'leave_request',
+        entityId: request.id,
+        description: `${isEmergencyBool ? 'Emergency leave' : 'Leave'} request submitted from ${startDate} to ${endDate}`,
+        newValues: { startDate, endDate, reason, isEmergency: isEmergencyBool, status: 'pending' }
+      },
+      req
+    );
+
+    // Notify admins & supervisors
+    await createRoleNotification(
+      req.user!.tenantId,
+      ['admin', 'supervisor'],
+      {
+        actorUserId: req.user!.userId,
+        type: 'leave_submitted',
+        title: 'New Leave Request Submitted',
+        message: `${isEmergencyBool ? '[EMERGENCY] ' : ''}A leave request was submitted for ${startDate} to ${endDate}.`,
+        entityType: 'leave_request',
+        entityId: request.id,
+        actionUrl: '/leave_requests'
+      }
+    );
 
     res.status(201).json(request);
   } catch (error) {
@@ -141,6 +155,34 @@ router.patch(
           reviewed_by: req.user!.userId,
           reviewed_at: new Date()
         }
+      });
+
+      // Create Audit Log
+      await createAuditLog(
+        {
+          tenantId: req.user!.tenantId,
+          actorUserId: req.user!.userId,
+          action: status === 'approved' ? 'leave.approved' : 'leave.rejected',
+          entityType: 'leave_request',
+          entityId: id,
+          description: `Leave request for ${leaveRequest.user_id} was ${status}`,
+          oldValues: { status: leaveRequest.status },
+          newValues: { status: updated.status, reviewedBy: req.user!.userId }
+        },
+        req
+      );
+
+      // Notify applicant
+      await createNotification({
+        tenantId: req.user!.tenantId,
+        recipientUserId: leaveRequest.user_id,
+        actorUserId: req.user!.userId,
+        type: status === 'approved' ? 'leave_approved' : 'leave_rejected',
+        title: `Leave Request ${status === 'approved' ? 'Approved' : 'Declined'}`,
+        message: `Your leave request for ${new Date(leaveRequest.start_date).toLocaleDateString()} to ${new Date(leaveRequest.end_date).toLocaleDateString()} has been ${status}.`,
+        entityType: 'leave_request',
+        entityId: id,
+        actionUrl: '/leave_requests'
       });
 
       res.json(updated);

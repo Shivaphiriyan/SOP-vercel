@@ -13,6 +13,8 @@ import leaveRouter from './routes/leave';
 import payrollRouter from './routes/payroll';
 import dashboardRouter from './routes/dashboard';
 import adminRouter from './routes/admin';
+import notificationsRouter from './routes/notifications';
+import auditLogsRouter from './routes/auditLogs';
 import { authenticateUser, setTenantContext } from './middleware/auth';
 import { saveEvidencePhoto } from './utils/upload';
 import { errorHandler } from './middleware/error';
@@ -28,7 +30,7 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like server-to-server or curl requests)
       if (!origin) return callback(null, true);
-      if (config.frontendUrls.includes(origin)) {
+      if (config.frontendUrls.includes(origin) || !config.isProduction) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS'));
@@ -77,6 +79,8 @@ app.use('/', leaveRouter);
 app.use('/', payrollRouter);
 app.use('/', dashboardRouter);
 app.use('/', adminRouter);
+app.use('/', notificationsRouter);
+app.use('/', auditLogsRouter);
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 

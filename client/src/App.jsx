@@ -16,9 +16,11 @@ import DashboardHeader from './components/Dashboard/DashboardHeader';
 import StatCard from './components/Dashboard/StatCard';
 import AnalyticsOverview from './components/Dashboard/AnalyticsOverview';
 import RecentActivity from './components/Dashboard/RecentActivity';
-import LoadingSkeleton from './components/Dashboard/LoadingSkeleton';
 import EmptyState from './components/Dashboard/EmptyState';
 import ThemeToggle from './components/ThemeToggle';
+import NotificationBell from './components/Notifications/NotificationBell';
+import Notifications from './Notifications';
+import AuditLogs from './AuditLogs';
 
 // Native JWT helper to decode payload without external packages
 const parseJwt = (token) => {
@@ -609,7 +611,7 @@ function App() {
         </div>
       ) : (
         // Authorized Two-Pane Layout
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
           <div className="mobile-header-bar">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
@@ -625,6 +627,7 @@ function App() {
               <span style={{ fontWeight: 600, fontSize: '16px', color: 'var(--text-h)' }}>SOP Portal</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <NotificationBell token={token} onNavigate={(tab) => navigateTo(tab)} />
               <ThemeToggle />
               <span className="workspace-badge">{tenantSlug}</span>
             </div>
@@ -754,6 +757,28 @@ function App() {
                         <span>Payroll</span>
                       </div>
                     )}
+
+                    <div 
+                      className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`}
+                      onClick={() => navigateTo('notifications')}
+                      tabIndex={0}
+                      role="button"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+                        />
+                      </svg>
+                      <span>Notifications</span>
+                    </div>
                   </>
                 )}
 
@@ -1262,117 +1287,16 @@ function App() {
               </div>
             )}
 
+            {activeTab === 'notifications' && (
+              <Notifications token={token} onNavigate={(tab) => navigateTo(tab)} showToast={showToast} />
+            )}
+
             {activeTab === 'audit_log' && (
-              <div className="leave-requests-container">
-                <div className="page-header-container" style={{ marginBottom: '24px' }}>
-                  <div className="page-header">
-                    <h1>Workspace Audit Log</h1>
-                    <p>Immutable log of compliance and configuration actions.</p>
-                  </div>
-                </div>
-
-                {auditError && (
-                  <div className="error-banner" style={{ marginBottom: '24px' }}>
-                    <span>{auditError}</span>
-                  </div>
-                )}
-
-                {auditLoading ? (
-                  <div className="loading-spinner-container">
-                    <div className="spinner"></div>
-                    <p>Loading audit logs...</p>
-                  </div>
-                ) : (
-                  <div className="table-wrapper">
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Action</th>
-                          <th>User</th>
-                          <th>Role</th>
-                          <th>Timestamp</th>
-                          <th>Details / Metadata</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {auditData.map(log => (
-                          <tr key={log.id}>
-                            <td>
-                              <span style={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '12px', color: 'var(--primary)' }}>
-                                {log.action}
-                              </span>
-                            </td>
-                            <td>{log.users?.username}</td>
-                            <td>
-                              <span className="status-badge" style={{ background: 'var(--surface)', color: 'var(--text-h)', textTransform: 'capitalize' }}>
-                                {log.users?.role}
-                              </span>
-                            </td>
-                            <td>{new Date(log.created_at).toLocaleString()}</td>
-                            <td style={{ maxWidth: '400px', wordBreak: 'break-word' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
-                                  <span style={{ fontSize: '13px', lineHeight: '1.4' }}>
-                                    {renderAuditMetadata(log)}
-                                  </span>
-                                  <button
-                                    onClick={() => toggleLogExpansion(log.id)}
-                                    style={{
-                                      background: 'none',
-                                      border: 'none',
-                                      color: 'var(--primary)',
-                                      cursor: 'pointer',
-                                      fontSize: '11px',
-                                      fontWeight: 600,
-                                      padding: '2px 6px',
-                                      borderRadius: '4px',
-                                      transition: 'all 0.2s',
-                                      whiteSpace: 'nowrap',
-                                      textDecoration: 'underline'
-                                    }}
-                                    onMouseOver={(e) => { e.currentTarget.style.color = 'var(--primary-hover)'; }}
-                                    onMouseOut={(e) => { e.currentTarget.style.color = 'var(--primary)'; }}
-                                  >
-                                    {expandedLogs[log.id] ? 'Hide details' : 'View details'}
-                                  </button>
-                                </div>
-                                {expandedLogs[log.id] && (
-                                  <div style={{
-                                    marginTop: '4px',
-                                    padding: '8px 12px',
-                                    background: 'rgba(0, 0, 0, 0.2)',
-                                    borderRadius: 'var(--radius-sm)',
-                                    border: '1px solid var(--border)',
-                                    overflowX: 'auto'
-                                  }}>
-                                    <pre style={{
-                                      margin: 0,
-                                      fontSize: '11px',
-                                      fontFamily: 'var(--mono)',
-                                      color: 'var(--text-muted)',
-                                      whiteSpace: 'pre-wrap',
-                                      wordBreak: 'break-all'
-                                    }}>
-                                      {JSON.stringify(log.metadata, null, 2)}
-                                    </pre>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                        {auditData.length === 0 && (
-                          <tr>
-                            <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                              No audit logs recorded.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor' ? (
+                <AuditLogs token={token} />
+              ) : (
+                <AccessDeniedScreen />
+              )
             )}
 
             {activeTab === 'team' && decoded?.role === 'admin' && (

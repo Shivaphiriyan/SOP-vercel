@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import { prisma, getPrisma } from '../context';
 import { authenticateUser, setTenantContext } from '../middleware/auth';
 import { config } from '../config';
+import { createAuditLog } from '../services/audit.service';
+import { createNotification } from '../services/notification.service';
 
 const router = Router();
 
@@ -40,8 +42,6 @@ router.post('/auth/login', async (req, res, next) => {
     }
 
     // 2. Look up user scoped to that tenant.
-    // Because users table has RLS, we must run the query inside a transaction
-    // and execute SET LOCAL app.current_tenant first.
     const user = await prisma.$transaction(async (tx) => {
       await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant = '${tenant.id}'`);
       return await tx.users.findFirst({
@@ -53,18 +53,53 @@ router.post('/auth/login', async (req, res, next) => {
     });
 
     if (!user) {
+      await createAuditLog({
+        tenantId: tenant.id,
+        action: 'auth.login_failed',
+        description: `Failed login attempt for username '${username}' (user not found)`,
+        status: 'failed',
+        metadata: { username }
+      }, req);
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
     if (user.status !== 'active') {
+      await createAuditLog({
+        tenantId: tenant.id,
+        actorUserId: user.id,
+        actorNameSnapshot: `${user.role}:${user.username}`,
+        action: 'auth.login_failed',
+        description: `Login attempt rejected for inactive user '${username}'`,
+        status: 'failed',
+        metadata: { username, status: user.status }
+      }, req);
       return res.status(401).json({ error: 'Account is disabled' });
     }
 
     // 3. Verify password with bcrypt
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     if (!passwordMatch) {
+      await createAuditLog({
+        tenantId: tenant.id,
+        actorUserId: user.id,
+        actorNameSnapshot: `${user.role}:${user.username}`,
+        action: 'auth.login_failed',
+        description: `Failed login attempt for user '${username}' (invalid password)`,
+        status: 'failed',
+        metadata: { username }
+      }, req);
       return res.status(401).json({ error: 'Invalid username or password' });
     }
+
+    // Record successful login audit
+    await createAuditLog({
+      tenantId: tenant.id,
+      actorUserId: user.id,
+      actorNameSnapshot: `${user.role}:${user.username}`,
+      action: 'auth.login',
+      description: `User '${username}' logged in successfully`,
+      status: 'success'
+    }, req);
 
     // 4. Issue JWT containing userId, tenantId, role, and page_permissions
     const token = jwt.sign(
@@ -136,6 +171,16 @@ router.post('/auth/signup', async (req, res, next) => {
       return { newTenant: tenant, newUser: user };
     });
 
+    // Audit log for tenant & admin signup
+    await createAuditLog({
+      tenantId: newTenant.id,
+      actorUserId: newUser.id,
+      actorNameSnapshot: `admin:${adminUsername}`,
+      action: 'tenant.created',
+      description: `Tenant '${companyName}' created with admin user '${adminUsername}'`,
+      newValues: { tenantName: companyName, adminUsername }
+    }, req);
+
     // 4. Issue JWT containing userId, tenantId, role, and page_permissions
     const token = jwt.sign(
       {
@@ -149,6 +194,72 @@ router.post('/auth/signup', async (req, res, next) => {
     );
 
     res.status(201).json({ token });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /auth/change-password
+ * Allows authenticated user to update their password securely.
+ */
+router.post('/auth/change-password', authenticateUser, setTenantContext, async (req, res, next) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Missing currentPassword or newPassword' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+  }
+
+  try {
+    const user = await getPrisma().users.findUnique({
+      where: { id: req.user!.userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!passwordMatch) {
+      await createAuditLog({
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: 'auth.password_change_failed',
+        description: 'Password change attempt failed (current password incorrect)',
+        status: 'failed'
+      }, req);
+      return res.status(400).json({ error: 'Current password is incorrect' });
+    }
+
+    const newHashedPassword = await bcrypt.hash(newPassword, 10);
+    await getPrisma().users.update({
+      where: { id: req.user!.userId },
+      data: { password_hash: newHashedPassword }
+    });
+
+    await createAuditLog({
+      tenantId: req.user!.tenantId,
+      actorUserId: req.user!.userId,
+      action: 'auth.password_changed',
+      description: 'Account password changed successfully',
+      status: 'success'
+    }, req);
+
+    await createNotification({
+      tenantId: req.user!.tenantId,
+      recipientUserId: req.user!.userId,
+      actorUserId: req.user!.userId,
+      type: 'security_update',
+      title: 'Security Alert: Password Changed',
+      message: 'Your account password was updated successfully.',
+      actionUrl: '/settings'
+    });
+
+    res.json({ message: 'Password updated successfully' });
   } catch (error) {
     next(error);
   }
@@ -188,11 +299,6 @@ router.get('/me', authenticateUser, setTenantContext, async (req, res, next) => 
 });
 
 if (!config.isProduction) {
-  /**
-   * GET /test-no-context
-   * Development-only route that queries users WITHOUT setting any tenant context.
-   * Used to verify the RLS "fail closed" behavior (should return zero rows).
-   */
   router.get('/test-no-context', async (req, res, next) => {
     try {
       const users = await getPrisma().users.findMany();

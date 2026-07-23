@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { getPrisma } from '../context';
 import { authenticateUser, setTenantContext, requireRole } from '../middleware/auth';
+import { createAuditLog } from '../services/audit.service';
+import { createNotification } from '../services/notification.service';
 
 const router = Router();
 
@@ -41,35 +43,37 @@ router.post('/attendance/check-in', authenticateUser, setTenantContext, async (r
     return res.status(400).json({ error: 'Missing coordinates (lat, lng)' });
   }
 
+  const now = new Date();
+  const workDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
   try {
     // 1. Check if an active open session exists (check_out_at is null)
     const activeLog = await getPrisma().attendance_logs.findFirst({
       where: {
+        tenant_id: tenantId,
         user_id: userId,
         check_out_at: null
       }
     });
 
     if (activeLog) {
-      return res.status(409).json({ error: 'Active attendance session already exists' });
+      return res.status(409).json({ error: 'You have already checked in today.' });
     }
 
-    // 2. Check if employee has already checked in on today's workday
-    const now = new Date();
-    const { start: todayStart, end: todayEnd } = getWorkdayBounds(now);
-
+    // 2. Check if employee has already checked in on today's workday (by work_date or workday bounds)
     const existingTodayLog = await getPrisma().attendance_logs.findFirst({
       where: {
+        tenant_id: tenantId,
         user_id: userId,
-        check_in_at: {
-          gte: todayStart,
-          lte: todayEnd
-        }
+        work_date: workDate
       }
     });
 
     if (existingTodayLog) {
-      return res.status(409).json({ error: 'Attendance already completed for today' });
+      if (existingTodayLog.check_out_at !== null) {
+        return res.status(409).json({ error: "Today's attendance is already completed." });
+      }
+      return res.status(409).json({ error: 'You have already checked in today.' });
     }
 
     // 3. Office location radius check
@@ -94,11 +98,12 @@ router.post('/attendance/check-in', authenticateUser, setTenantContext, async (r
       }
     }
 
-    // 4. Create new attendance log
+    // 4. Create new attendance log with work_date
     const log = await getPrisma().attendance_logs.create({
       data: {
         tenant_id: tenantId,
         user_id: userId,
+        work_date: workDate,
         check_in_at: now,
         check_in_lat: lat,
         check_in_lng: lng,
@@ -106,8 +111,22 @@ router.post('/attendance/check-in', authenticateUser, setTenantContext, async (r
       }
     });
 
+    // Audit log
+    await createAuditLog({
+      tenantId,
+      actorUserId: userId,
+      action: 'attendance.check_in',
+      entityType: 'attendance_log',
+      entityId: log.id,
+      description: `Checked in at ${now.toLocaleTimeString()}`,
+      newValues: { check_in_at: now, lat, lng }
+    }, req);
+
     res.status(201).json(log);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      return res.status(409).json({ error: 'You have already checked in today.' });
+    }
     next(error);
   }
 });
@@ -119,13 +138,15 @@ router.post('/attendance/check-in', authenticateUser, setTenantContext, async (r
 router.post('/attendance/check-out', authenticateUser, setTenantContext, async (req, res, next) => {
   const { lat, lng, accuracy } = req.body;
   const userId = req.user!.userId;
+  const tenantId = req.user!.tenantId;
   const now = new Date();
-  const { start: todayStart, end: todayEnd } = getWorkdayBounds(now);
+  const workDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
   try {
     // 1. Find user's active open check-in session
     const activeLog = await getPrisma().attendance_logs.findFirst({
       where: {
+        tenant_id: tenantId,
         user_id: userId,
         check_out_at: null
       },
@@ -138,11 +159,9 @@ router.post('/attendance/check-out', authenticateUser, setTenantContext, async (
       // Check if attendance was already checked out today
       const completedTodayLog = await getPrisma().attendance_logs.findFirst({
         where: {
+          tenant_id: tenantId,
           user_id: userId,
-          check_in_at: {
-            gte: todayStart,
-            lte: todayEnd
-          },
+          work_date: workDate,
           check_out_at: {
             not: null
           }
@@ -150,10 +169,10 @@ router.post('/attendance/check-out', authenticateUser, setTenantContext, async (
       });
 
       if (completedTodayLog) {
-        return res.status(409).json({ error: 'Attendance session already checked out' });
+        return res.status(409).json({ error: "Today's attendance is already completed." });
       }
 
-      return res.status(400).json({ error: 'No active attendance session found' });
+      return res.status(400).json({ error: 'No active attendance session was found.' });
     }
 
     // 2. Validate timestamp ordering
@@ -172,6 +191,17 @@ router.post('/attendance/check-out', authenticateUser, setTenantContext, async (
         check_out_accuracy_m: accuracy !== undefined ? accuracy : null
       }
     });
+
+    // Audit log
+    await createAuditLog({
+      tenantId,
+      actorUserId: userId,
+      action: 'attendance.check_out',
+      entityType: 'attendance_log',
+      entityId: updatedLog.id,
+      description: `Checked out at ${now.toLocaleTimeString()}`,
+      newValues: { check_out_at: now, lat, lng }
+    }, req);
 
     res.json(updatedLog);
   } catch (error) {

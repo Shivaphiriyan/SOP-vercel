@@ -160,7 +160,8 @@ html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
   background: var(--app-background);
   color: var(--text-primary);
   transition: background-color 0.25s ease, color 0.25s ease;
@@ -168,9 +169,10 @@ html, body {
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {

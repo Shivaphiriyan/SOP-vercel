@@ -40,11 +40,18 @@ if (env === 'production') {
 }
 
 // 4. Parse FRONTEND_URL (Supports multi-origin comma-separated list)
-const rawFrontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const defaultFrontendUrls = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+  'http://localhost:3000'
+];
+
+const rawFrontendUrl = process.env.FRONTEND_URL;
 const frontendUrls = rawFrontendUrl
-  .split(',')
-  .map((url) => url.trim())
-  .filter(Boolean);
+  ? rawFrontendUrl.split(',').map((url) => url.trim()).filter(Boolean)
+  : defaultFrontendUrls;
 
 const hasCloudinaryConfig = Boolean(
   cloudinaryCloudName.trim() &&

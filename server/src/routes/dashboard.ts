@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getPrisma } from '../context';
 import { authenticateUser, setTenantContext } from '../middleware/auth';
+import { calculateAttendanceDurationMs } from '../utils/attendance';
 
 const router = Router();
 
@@ -78,7 +79,7 @@ router.get(
         where: whereClause,
         orderBy: { created_at: 'desc' },
         include: {
-          users: {
+          actor_user: {
             select: {
               id: true,
               username: true
@@ -90,10 +91,10 @@ router.get(
       // Filter by category and auditor permissions
       let processed = logs.map((log) => {
         const category = mapActionToCategory(log.action);
-        const rawUser = log.users?.username || 'System';
+        const rawUser = log.actor_user?.username || log.actor_name_snapshot || 'System';
         const actorName = formatUsername(rawUser);
         const actorInitials = rawUser ? rawUser.substring(0, 2).toUpperCase() : 'SY';
-        const isSelf = log.user_id === currentUserId;
+        const isSelf = log.actor_user_id === currentUserId;
 
         let friendlyAction = log.action.replace(/[._]/g, ' ');
         if (log.action === 'sop.signed') {
@@ -104,7 +105,7 @@ router.get(
 
         return {
           id: log.id,
-          actorUserId: log.user_id,
+          actorUserId: log.actor_user_id,
           actorName: isSelf && (role === 'operator' || role === 'employee') ? 'You' : actorName,
           actorInitials,
           action: friendlyAction,
@@ -276,12 +277,7 @@ router.get(
 
         let totalMs = 0;
         userLogs.forEach((log) => {
-          if (log.check_out_at) {
-            const checkIn = new Date(log.check_in_at).getTime();
-            const checkOut = new Date(log.check_out_at).getTime();
-            const diffMs = checkOut - checkIn;
-            if (diffMs > 0) totalMs += diffMs;
-          }
+          totalMs += calculateAttendanceDurationMs(log.check_in_at, log.check_out_at);
         });
         const hoursThisWeek = Math.round((totalMs / (1000 * 60 * 60)) * 100) / 100;
 
@@ -306,10 +302,10 @@ router.get(
 
       // Fetch audit logs matching user role scope
       const logs = await getPrisma().audit_logs.findMany({
-        where: role === 'operator' || role === 'employee' ? { user_id: userId } : {},
+        where: role === 'operator' || role === 'employee' ? { actor_user_id: userId } : {},
         orderBy: { created_at: 'desc' },
         take: 10,
-        include: { users: { select: { username: true } } }
+        include: { actor_user: { select: { username: true } } }
       });
 
       const sopIds: string[] = [];
@@ -330,12 +326,12 @@ router.get(
       const titleMap = new Map(templates.map((t) => [t.id, t.title]));
 
       let activity = logs.map((log) => {
-        const rawUser = log.users?.username || 'System';
+        const rawUser = log.actor_user?.username || log.actor_name_snapshot || 'System';
         const displayUser = formatUsername(rawUser);
         const meta = log.metadata as any;
         const sopTitle = (meta && meta.sopId && titleMap.get(meta.sopId)) || 'SOP';
         const category = mapActionToCategory(log.action);
-        const isSelf = log.user_id === userId;
+        const isSelf = log.actor_user_id === userId;
 
         let message = '';
         const actor = isSelf && (role === 'operator' || role === 'employee') ? 'You' : displayUser;

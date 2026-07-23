@@ -2,6 +2,8 @@ import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { getPrisma } from '../context';
 import { authenticateUser, setTenantContext, requireRole } from '../middleware/auth';
+import { createAuditLog } from '../services/audit.service';
+import { createNotification } from '../services/notification.service';
 
 const router = Router();
 
@@ -55,6 +57,30 @@ router.post('/admin/users', async (req, res, next) => {
         page_permissions: true,
         created_at: true
       }
+    });
+
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: 'employee.created',
+        entityType: 'user',
+        entityId: newUser.id,
+        description: `Created new employee '${newUser.username}' with role '${newUser.role}'`,
+        newValues: { username: newUser.username, role: newUser.role, status: newUser.status }
+      },
+      req
+    );
+
+    await createNotification({
+      tenantId: req.user!.tenantId,
+      recipientUserId: newUser.id,
+      actorUserId: req.user!.userId,
+      type: 'new_employee',
+      title: 'Welcome to SOP SaaS',
+      message: `Your employee account (${newUser.username}) has been created with role '${newUser.role}'.`,
+      entityType: 'user',
+      entityId: newUser.id
     });
 
     res.status(201).json(newUser);
@@ -119,6 +145,15 @@ router.patch('/admin/users/:id', async (req, res, next) => {
   }
 
   try {
+    const currentUser = await getPrisma().users.findUnique({
+      where: { id },
+      select: { id: true, role: true, status: true, username: true }
+    });
+
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     const updatedUser = await getPrisma().users.update({
       where: { id },
       data: {
@@ -134,6 +169,33 @@ router.patch('/admin/users/:id', async (req, res, next) => {
         created_at: true
       }
     });
+
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: 'employee.updated',
+        entityType: 'user',
+        entityId: id,
+        description: `Updated employee '${updatedUser.username}' role/status`,
+        oldValues: { role: currentUser.role, status: currentUser.status },
+        newValues: { role: updatedUser.role, status: updatedUser.status }
+      },
+      req
+    );
+
+    if (status === 'active' && currentUser.status !== 'active') {
+      await createNotification({
+        tenantId: req.user!.tenantId,
+        recipientUserId: id,
+        actorUserId: req.user!.userId,
+        type: 'account_activated',
+        title: 'Account Activated',
+        message: 'Your account status has been updated to active.',
+        entityType: 'user',
+        entityId: id
+      });
+    }
 
     res.json(updatedUser);
   } catch (error: any) {
@@ -194,6 +256,20 @@ router.patch('/admin/users/:id/permissions', async (req, res, next) => {
       }
     });
 
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: 'employee.permissions_updated',
+        entityType: 'user',
+        entityId: id,
+        description: `Updated permissions for employee '${user.username}'`,
+        oldValues: existingPermissions,
+        newValues: updatedPermissions
+      },
+      req
+    );
+
     res.json(updatedUser);
   } catch (error: any) {
     if (error.code === 'P2025') {
@@ -237,6 +313,16 @@ router.patch('/admin/settings', async (req, res, next) => {
   const { location_lat, location_lng, location_radius_m, leave_notice_days } = req.body;
 
   try {
+    const currentTenant = await getPrisma().tenants.findUnique({
+      where: { id: req.user!.tenantId },
+      select: {
+        location_lat: true,
+        location_lng: true,
+        location_radius_m: true,
+        leave_notice_days: true
+      }
+    });
+
     const updatedTenant = await getPrisma().tenants.update({
       where: { id: req.user!.tenantId },
       data: {
@@ -252,6 +338,20 @@ router.patch('/admin/settings', async (req, res, next) => {
         leave_notice_days: true
       }
     });
+
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: 'settings.updated',
+        entityType: 'tenant',
+        entityId: req.user!.tenantId,
+        description: 'Updated workspace settings',
+        oldValues: currentTenant,
+        newValues: updatedTenant
+      },
+      req
+    );
 
     res.json(updatedTenant);
   } catch (error) {
@@ -308,6 +408,18 @@ router.delete('/admin/users/:id', async (req, res, next) => {
         username: `${user.username}_deleted_${Date.now()}`
       }
     });
+
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: 'employee.deleted',
+        entityType: 'user',
+        entityId: id,
+        description: `Disabled employee account '${user.username}'`
+      },
+      req
+    );
 
     res.json({ message: 'User deleted successfully' });
   } catch (error: any) {

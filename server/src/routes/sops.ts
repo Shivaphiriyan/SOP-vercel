@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { getPrisma } from '../context';
 import { authenticateUser, setTenantContext, requireRole } from '../middleware/auth';
+import { createAuditLog } from '../services/audit.service';
+import { createNotification } from '../services/notification.service';
 
 const router = Router();
 
@@ -31,6 +33,19 @@ router.post('/sops', authenticateUser, setTenantContext, requireRole('admin'), a
         is_current: true
       }
     });
+
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: 'sop.created',
+        entityType: 'sop_template',
+        entityId: sop.id,
+        description: `Created SOP procedure template '${sop.title}'`,
+        newValues: { title: sop.title, category: sop.category, version: 1 }
+      },
+      req
+    );
 
     res.status(201).json(sop);
   } catch (error) {
@@ -78,6 +93,20 @@ router.put('/sops/:id', authenticateUser, setTenantContext, requireRole('admin')
       }
     });
 
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: 'sop.updated',
+        entityType: 'sop_template',
+        entityId: newSop.id,
+        description: `Updated SOP procedure '${newSop.title}' to version ${newSop.version}`,
+        oldValues: { version: activeSop.version },
+        newValues: { version: newSop.version, title: newSop.title }
+      },
+      req
+    );
+
     res.json(newSop);
   } catch (error) {
     next(error);
@@ -124,14 +153,17 @@ router.get('/sops/:id', authenticateUser, setTenantContext, async (req, res, nex
     }
 
     // Insert audit log row
-    await getPrisma().audit_logs.create({
-      data: {
-        tenant_id: req.user!.tenantId,
-        user_id: req.user!.userId,
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
         action: 'sop.viewed',
-        metadata: { sopId: id }
-      }
-    });
+        entityType: 'sop_template',
+        entityId: id,
+        description: `Viewed SOP template '${sop.title}'`
+      },
+      req
+    );
 
     res.json(sop);
   } catch (error) {
@@ -161,14 +193,17 @@ router.delete('/sops/:id', authenticateUser, setTenantContext, requireRole('admi
     });
 
     // Insert audit log row
-    await getPrisma().audit_logs.create({
-      data: {
-        tenant_id: req.user!.tenantId,
-        user_id: req.user!.userId,
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
         action: 'sop.deleted',
-        metadata: { sopId: id, title: sop.title }
-      }
-    });
+        entityType: 'sop_template',
+        entityId: id,
+        description: `Archived SOP template '${sop.title}'`
+      },
+      req
+    );
 
     res.json({ message: 'SOP template deleted successfully', sop: updated });
   } catch (error) {
@@ -227,6 +262,7 @@ router.get('/checklist-runs/:id', authenticateUser, setTenantContext, async (req
     next(error);
   }
 });
+
 /**
  * POST /checklist-runs
  * Start a run for a given sopId (creates checklist_runs + steps rows)
@@ -308,6 +344,33 @@ router.post('/checklist-runs', authenticateUser, setTenantContext, async (req, r
       where: { run_id: run.id }
     });
 
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
+        action: 'sop.assigned',
+        entityType: 'checklist_run',
+        entityId: run.id,
+        description: `Assigned SOP '${sop.title}' checklist run to user '${targetOperatorId}'`,
+        newValues: { runId: run.id, sopId: sop.id, operatorId: targetOperatorId }
+      },
+      req
+    );
+
+    if (targetOperatorId !== req.user!.userId) {
+      await createNotification({
+        tenantId: req.user!.tenantId,
+        recipientUserId: targetOperatorId,
+        actorUserId: req.user!.userId,
+        type: 'sop_assigned',
+        title: 'New SOP Assigned',
+        message: `You have been assigned a new checklist run for '${sop.title}'.`,
+        entityType: 'checklist_run',
+        entityId: run.id,
+        actionUrl: '/sops'
+      });
+    }
+
     res.status(201).json({ run, steps });
   } catch (error) {
     next(error);
@@ -348,6 +411,21 @@ router.patch('/checklist-runs/:runId/steps/:stepId', authenticateUser, setTenant
       where: { id: step.id },
       data: updateData
     });
+
+    if (evidence_url) {
+      await createAuditLog(
+        {
+          tenantId: req.user!.tenantId,
+          actorUserId: req.user!.userId,
+          action: 'evidence.submitted',
+          entityType: 'step',
+          entityId: stepId,
+          description: `Submitted evidence photo for step '${step.description}'`,
+          newValues: { evidence_url }
+        },
+        req
+      );
+    }
 
     res.json(updatedStep);
   } catch (error) {
@@ -410,18 +488,18 @@ router.post('/sops/:id/sign', authenticateUser, setTenantContext, async (req, re
     const version = sop ? sop.version : 1;
 
     // 5. Create audit log row
-    await getPrisma().audit_logs.create({
-      data: {
-        tenant_id: req.user!.tenantId,
-        user_id: req.user!.userId,
+    await createAuditLog(
+      {
+        tenantId: req.user!.tenantId,
+        actorUserId: req.user!.userId,
         action: 'sop.signed',
-        metadata: {
-          runId,
-          sopId,
-          version
-        }
-      }
-    });
+        entityType: 'checklist_run',
+        entityId: runId,
+        description: `Completed and signed checklist run for '${sop?.title || sopId}' (v${version})`,
+        newValues: { status: 'completed', completed_at: updatedRun.completed_at }
+      },
+      req
+    );
 
     res.json({ success: true, run: updatedRun });
   } catch (error) {
@@ -505,78 +583,20 @@ router.patch('/checklist-runs/:runId/admin-complete', authenticateUser, setTenan
     });
 
     // 2. Log in audit_logs
-    await db.audit_logs.create({
-      data: {
-        tenant_id: run.tenant_id,
-        user_id: userId,
+    await createAuditLog(
+      {
+        tenantId: run.tenant_id,
+        actorUserId: userId,
         action: 'checklist.admin_override_complete',
-        metadata: {
-          runId: run.id,
-          sopId: run.sop_id,
-          reason: reason.trim(),
-          adminUserId: userId
-        }
-      }
-    });
+        entityType: 'checklist_run',
+        entityId: run.id,
+        description: `Admin override: Force completed checklist run with reason '${reason.trim()}'`,
+        newValues: { status: 'completed', override_reason: reason.trim() }
+      },
+      req
+    );
 
     res.json(updatedRun);
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * GET /audit-logs
- * Fetch all audit logs for the current tenant (Admin, Supervisor, Auditor only)
- */
-router.get('/audit-logs', authenticateUser, setTenantContext, async (req, res, next) => {
-  if (!['admin', 'supervisor', 'auditor'].includes(req.user!.role)) {
-    return res.status(403).json({ error: 'Access denied' });
-  }
-
-  try {
-    const logs = await getPrisma().audit_logs.findMany({
-      include: {
-        users: {
-          select: { username: true, role: true }
-        }
-      },
-      orderBy: { created_at: 'desc' }
-    });
-
-    // Resolve SOP titles for logs if needed
-    const sopIds = logs
-      .map(log => {
-        const metadata = log.metadata as any;
-        return metadata?.sopId;
-      })
-      .filter((id): id is string => typeof id === 'string');
-
-    const uniqueSopIds = Array.from(new Set(sopIds));
-
-    const sops = await getPrisma().sop_templates.findMany({
-      where: { id: { in: uniqueSopIds } },
-      select: { id: true, title: true }
-    });
-
-    const sopMap = new Map<string, string>();
-    for (const sop of sops) {
-      sopMap.set(sop.id, sop.title);
-    }
-
-    const logsWithTitles = logs.map(log => {
-      const metadata = log.metadata as any;
-      let sopTitle = null;
-      if (metadata && metadata.sopId) {
-        sopTitle = sopMap.get(metadata.sopId) || null;
-      }
-      return {
-        ...log,
-        sopTitle
-      };
-    });
-
-    res.json(logsWithTitles);
   } catch (error) {
     next(error);
   }
