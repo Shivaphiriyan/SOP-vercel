@@ -10,7 +10,7 @@ import { createNotification } from '../services/notification.service';
 const router = Router();
 
 // Helper to slugify tenant name for comparison
-const slugify = (text: string) => {
+const normalizeSlug = (text: string) => {
   return text
     .toLowerCase()
     .trim()
@@ -31,19 +31,16 @@ router.post('/auth/login', async (req, res, next) => {
   }
 
   try {
-    // 1. Look up the tenant by slugifying the name (public table, no RLS)
+    // 1. Look up the tenant by name matching (public table, no RLS)
+    // NOTE: slug column will be used once the DB column is added and backfilled.
+    const inputSlug = normalizeSlug(tenantSlug);
     const tenants = await prisma.tenants.findMany();
-    const inputSlug = slugify(tenantSlug);
-    const cleanInput = inputSlug.replace(/-(corp|co|inc|ltd)$/i, '');
-    
     const tenant = tenants.find((t) => {
-      const tSlug = slugify(t.name);
-      const cleanTSlug = tSlug.replace(/-(corp|co|inc|ltd)$/i, '');
+      const tSlug = normalizeSlug(t.name);
       return (
         tSlug === inputSlug ||
         t.name.toLowerCase() === tenantSlug.toLowerCase() ||
-        tSlug.replace(/-/g, '') === inputSlug.replace(/-/g, '') ||
-        (cleanInput.length > 2 && cleanTSlug === cleanInput)
+        tSlug.replace(/-/g, '') === inputSlug.replace(/-/g, '')
       );
     });
 
@@ -148,21 +145,27 @@ router.post('/auth/login', async (req, res, next) => {
 router.post('/auth/signup', async (req, res, next) => {
   const { companyName, adminUsername, adminPassword } = req.body;
 
-  if (!companyName || !adminUsername || !adminPassword) {
+  if (!companyName || !companyName.trim() || !adminUsername || !adminUsername.trim() || !adminPassword) {
     return res.status(400).json({ error: 'Missing companyName, adminUsername, or adminPassword' });
   }
 
+  if (adminPassword.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+  }
+
   try {
-    const targetSlug = slugify(companyName);
+    const cleanCompanyName = companyName.trim();
+    const cleanUsername = adminUsername.trim();
+    const targetSlug = normalizeSlug(cleanCompanyName);
     
-    // 1. Check if a tenant with this slug already exists to prevent collisions
+    // 1. Check if a tenant with this slug or name already exists to prevent collisions
     const existingTenants = await prisma.tenants.findMany();
     const isDuplicate = existingTenants.some(
-      (t) => slugify(t.name) === targetSlug || t.name.toLowerCase() === companyName.toLowerCase()
+      (t) => normalizeSlug(t.name) === targetSlug || t.name.toLowerCase() === cleanCompanyName.toLowerCase()
     );
 
     if (isDuplicate) {
-      return res.status(400).json({ error: 'A company with this name already exists. Please choose a different name.' });
+      return res.status(409).json({ error: 'A company with this name already exists. Please choose a different name.' });
     }
 
     // 2. Hash the password
@@ -172,7 +175,7 @@ router.post('/auth/signup', async (req, res, next) => {
     const { newTenant, newUser } = await prisma.$transaction(async (tx) => {
       // Create tenant
       const tenant = await tx.tenants.create({
-        data: { name: companyName }
+        data: { name: cleanCompanyName }
       });
 
       // Set RLS context for user creation
@@ -182,7 +185,7 @@ router.post('/auth/signup', async (req, res, next) => {
       const user = await tx.users.create({
         data: {
           tenant_id: tenant.id,
-          username: adminUsername,
+          username: cleanUsername,
           password_hash: hashedPassword,
           role: 'admin',
           status: 'active',
@@ -197,10 +200,10 @@ router.post('/auth/signup', async (req, res, next) => {
     await createAuditLog({
       tenantId: newTenant.id,
       actorUserId: newUser.id,
-      actorNameSnapshot: `admin:${adminUsername}`,
+      actorNameSnapshot: `admin:${newUser.username}`,
       action: 'tenant.created',
-      description: `Tenant '${companyName}' created with admin user '${adminUsername}'`,
-      newValues: { tenantName: companyName, adminUsername }
+      description: `Tenant '${newTenant.name}' created with admin user '${newUser.username}'`,
+      newValues: { tenantName: newTenant.name, adminUsername: newUser.username }
     }, req);
 
     // 4. Issue JWT containing userId, tenantId, role, and page_permissions
@@ -216,7 +219,10 @@ router.post('/auth/signup', async (req, res, next) => {
     );
 
     res.status(201).json({ token });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      return res.status(409).json({ error: 'A company or user with these details already exists.' });
+    }
     next(error);
   }
 });

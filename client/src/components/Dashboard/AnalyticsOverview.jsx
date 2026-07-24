@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { useTheme } from '../../context/ThemeContext';
 
 Chart.register(...registerables);
 
-export default function AnalyticsOverview({ summaryData, role }) {
-  const [timeframe, setTimeframe] = useState('This Week');
+export default function AnalyticsOverview({ summaryData, role, timeframe, onTimeframeChange }) {
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === 'light';
 
@@ -357,7 +356,7 @@ export default function AnalyticsOverview({ summaryData, role }) {
           </svg>
           Company Analytics & Insights
         </h2>
-        <select className="timeframe-select" value={timeframe} onChange={(e) => setTimeframe(e.target.value)} aria-label="Select Analytics Timeframe">
+        <select className="timeframe-select" value={timeframe} onChange={(e) => onTimeframeChange(e.target.value)} aria-label="Select Analytics Timeframe">
           <option value="This Week">This Week</option>
           <option value="This Month">This Month</option>
           <option value="This Quarter">This Quarter</option>

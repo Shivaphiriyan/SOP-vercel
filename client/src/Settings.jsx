@@ -467,6 +467,7 @@ const Settings = ({ token, showToast }) => {
                     <label className="form-label" htmlFor="company-name-input">
                       Company / Organization Name <span className="required-asterisk">*</span>
                     </label>
+                    <span className="form-helper-text">Displayed on payroll reports, page headers, and workspace notifications.</span>
                     <input 
                       id="company-name-input"
                       type="text" 
@@ -475,7 +476,6 @@ const Settings = ({ token, showToast }) => {
                       onChange={e => setCompanyName(e.target.value)}
                       placeholder="Enter organization name"
                     />
-                    <span className="form-helper-text">Displayed on payroll reports, page headers, and workspace notifications.</span>
                   </div>
 
                   <div className="form-group">
@@ -605,6 +605,7 @@ const Settings = ({ token, showToast }) => {
                     <label className="form-label" htmlFor="geofence-radius-input">
                       Allowed Check-in Radius (Meters) <span className="required-asterisk">*</span>
                     </label>
+                    <span className="form-helper-text">Employees must be inside this radius to check in.</span>
                     <div className="input-unit-wrapper">
                       <input 
                         id="geofence-radius-input"
@@ -618,7 +619,6 @@ const Settings = ({ token, showToast }) => {
                       />
                       <span className="unit-tag">Meters</span>
                     </div>
-                    <span className="form-helper-text">Employees must be inside this radius to check in.</span>
                   </div>
                 </div>
 

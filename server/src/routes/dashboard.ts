@@ -156,10 +156,29 @@ router.get(
       const role = req.user!.role;
       const userId = req.user!.userId;
 
+      // Range parameter: 'week' (default), 'month', 'quarter'
+      const rawRange = (req.query.range as string || 'week').toLowerCase();
+      const range = ['week', 'month', 'quarter'].includes(rawRange) ? rawRange : 'week';
+
       let summary: any = {};
 
+      const now = new Date();
       const todayStart = new Date();
       todayStart.setUTCHours(0, 0, 0, 0);
+
+      // Compute range start date
+      let rangeStart: Date;
+      if (range === 'month') {
+        rangeStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      } else if (range === 'quarter') {
+        const quarterStartMonth = Math.floor(now.getUTCMonth() / 3) * 3;
+        rangeStart = new Date(Date.UTC(now.getUTCFullYear(), quarterStartMonth, 1));
+      } else {
+        // week: last 7 days
+        rangeStart = new Date();
+        rangeStart.setUTCDate(rangeStart.getUTCDate() - 6);
+        rangeStart.setUTCHours(0, 0, 0, 0);
+      }
 
       // Compute Leave breakdown
       const approvedLeavesCount = await getPrisma().leave_requests.count({
@@ -175,12 +194,15 @@ router.get(
         where: role === 'operator' || role === 'employee' ? { user_id: userId, status: 'cancelled' } : { status: 'cancelled' }
       });
 
-      // Compute last 7 days daily attendance & checklist trend
+      // Build day-by-day series from rangeStart through today
       const dailyTrend = [];
       const checklistDays = [];
-      for (let i = 6; i >= 0; i--) {
-        const dStart = new Date();
-        dStart.setUTCDate(dStart.getUTCDate() - i);
+
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const totalDays = Math.round((todayStart.getTime() - rangeStart.getTime()) / msPerDay) + 1;
+
+      for (let i = 0; i < totalDays; i++) {
+        const dStart = new Date(rangeStart.getTime() + i * msPerDay);
         dStart.setUTCHours(0, 0, 0, 0);
 
         const dEnd = new Date(dStart);

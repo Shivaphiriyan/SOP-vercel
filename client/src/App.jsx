@@ -178,6 +178,7 @@ function App() {
   const [activityData, setActivityData] = useState(null);
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState('');
+  const [analyticsTimeframe, setAnalyticsTimeframe] = useState('This Week');
 
   // Toast Notification State & Logic
   const [toasts, setToasts] = useState([]);
@@ -339,9 +340,16 @@ function App() {
   // Fetch Dashboard Stats once authenticated
   useEffect(() => {
     if (token && decoded) {
-      fetchDashboardData();
+      fetchDashboardData(analyticsTimeframe);
     }
   }, [token, decoded]);
+
+  // Re-fetch when analytics timeframe changes (after initial load)
+  useEffect(() => {
+    if (token && decoded) {
+      fetchDashboardData(analyticsTimeframe);
+    }
+  }, [analyticsTimeframe]);
 
   // Handle URL hash routing
   useEffect(() => {
@@ -388,11 +396,18 @@ function App() {
     }
   }, [activeTab]);
 
-  const fetchDashboardData = async () => {
+  const timeframeToRange = (tf) => {
+    if (tf === 'This Month') return 'month';
+    if (tf === 'This Quarter') return 'quarter';
+    return 'week';
+  };
+
+  const fetchDashboardData = async (timeframe) => {
     setDashboardLoading(true);
     setDashboardError('');
+    const range = timeframeToRange(timeframe || analyticsTimeframe);
     try {
-      const response = await fetch(`${API_URL}/dashboard/summary`, {
+      const response = await fetch(`${API_URL}/dashboard/summary?range=${range}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -683,7 +698,7 @@ function App() {
         </div>
       ) : (
         // Authorized Two-Pane Layout
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
+        <div className="app-shell" style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
           <div className="mobile-header-bar">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
@@ -1033,6 +1048,7 @@ function App() {
                     tenantSlug={tenantSlug}
                     role={decoded?.role}
                     onNavigate={navigateTo}
+                    token={token}
                   />
 
                   {dashboardLoading ? (
@@ -1210,6 +1226,8 @@ function App() {
                         <AnalyticsOverview
                           summaryData={summaryData}
                           role={decoded?.role}
+                          timeframe={analyticsTimeframe}
+                          onTimeframeChange={setAnalyticsTimeframe}
                         />
                         <RecentActivity
                           activityData={activityData}

@@ -187,6 +187,9 @@
 .full-width {
   width: 100% !important;
   box-sizing: border-box !important;
+}
+
+.login-form .input-field.full-width {
   height: 44px !important;
 }
 
@@ -299,9 +302,19 @@
 /* ==========================================
    Dashboard Sidebar & Two-Pane Layout
    ========================================== */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .app-layout {
   display: flex;
   flex: 1;
+  min-height: 0;
   height: 100%;
   max-height: 100%;
   width: 100%;
@@ -490,13 +503,15 @@
 /* Main Dashboard Panels */
 .main-content {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   background: var(--bg);
   padding: 32px 36px;
   overflow-y: auto;
   overflow-x: hidden;
   box-sizing: border-box;
   height: 100%;
-  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .page-header {
@@ -965,13 +980,15 @@
 @media (max-width: 1024px) {
   .mobile-header-bar {
     display: flex;
+    flex-shrink: 0;
   }
 
   .app-layout {
     flex-direction: column;
-    height: auto;
-    max-height: none;
-    overflow: visible;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
   }
 
   .sidebar {
@@ -1011,6 +1028,12 @@
 
   .main-content {
     padding: 16px !important;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
     overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 }

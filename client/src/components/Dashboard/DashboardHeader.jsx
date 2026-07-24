@@ -1,4 +1,5 @@
 import ThemeToggle from '../ThemeToggle';
+import NotificationBell from '../Notifications/NotificationBell';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -16,7 +17,7 @@ const formatDate = () => {
   });
 };
 
-export default function DashboardHeader({ username, tenantSlug, role, onNavigate }) {
+export default function DashboardHeader({ username, tenantSlug, role, onNavigate, token }) {
   const greeting = getGreeting();
   const formattedDate = formatDate();
   const isAdminOrSupervisor = role === 'admin' || role === 'supervisor';
@@ -73,6 +74,9 @@ export default function DashboardHeader({ username, tenantSlug, role, onNavigate
           </button>
         )}
 
+        <div style={{ flexShrink: 0 }}>
+          <NotificationBell token={token} onNavigate={onNavigate} />
+        </div>
         <ThemeToggle />
       </div>
     </div>

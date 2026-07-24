@@ -251,6 +251,8 @@
   gap: 20px;
   width: 100%;
   align-items: start;
+  /* Prevent grid children from exceeding their allocated column */
+  min-width: 0;
 }
 
 /* Left Panel: Company Analytics Section */
@@ -264,6 +266,9 @@
   gap: 20px;
   box-shadow: var(--shadow-md);
   transition: background-color 0.25s ease, border-color 0.25s ease;
+  /* Prevent chart canvases from overflowing the grid column */
+  min-width: 0;
+  overflow: hidden;
 }
 
 .analytics-panel-header {
@@ -302,6 +307,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  /* Ensure nested chart-cards don't expand beyond available space */
+  min-width: 0;
 }
 
 .chart-card {
@@ -313,6 +320,9 @@
   flex-direction: column;
   gap: 14px;
   transition: background-color 0.25s ease, border-color 0.25s ease;
+  /* Constrain chart canvas to card width */
+  min-width: 0;
+  overflow: hidden;
 }
 
 .chart-card-title {
@@ -491,6 +501,8 @@
   height: 100%;
   box-sizing: border-box;
   transition: background-color 0.25s ease, border-color 0.25s ease;
+  /* Keep this panel inside its grid column */
+  min-width: 0;
 }
 
 .panel-header {
