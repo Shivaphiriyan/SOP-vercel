@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import { API_URL } from './config/api';
 import Attendance from './Attendance';
@@ -179,23 +179,54 @@ function App() {
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState('');
 
-  // Toast Notification State
+  // Toast Notification State & Logic
   const [toasts, setToasts] = useState([]);
 
-  const showToast = (message, type = 'success') => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    
-    // Auto dismiss
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, exiting: true } : t))
+    );
     setTimeout(() => {
-      setToasts((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, exiting: true } : t))
-      );
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 250);
-    }, 3000);
-  };
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 280);
+  }, []);
+
+  const showToast = useCallback((optsOrMsg, type = 'success', customTitle, customDuration = 4500) => {
+    let message = '';
+    let toastType = type;
+    let title = customTitle;
+    let duration = customDuration;
+
+    if (typeof optsOrMsg === 'object' && optsOrMsg !== null) {
+      message = optsOrMsg.message || '';
+      toastType = optsOrMsg.type || type || 'success';
+      title = optsOrMsg.title;
+      duration = optsOrMsg.duration || customDuration;
+    } else {
+      message = String(optsOrMsg || '');
+    }
+
+    if (!title) {
+      switch (toastType) {
+        case 'success':
+          title = 'Success';
+          break;
+        case 'error':
+          title = 'Error';
+          break;
+        case 'warning':
+          title = 'Warning';
+          break;
+        case 'info':
+        default:
+          title = 'Information';
+          break;
+      }
+    }
+
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev.slice(-4), { id, message, type: toastType, title, duration }]);
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -1337,38 +1368,119 @@ function App() {
       )}
 
       {/* Toast Notification Container */}
-      <div className="toast-container">
+      <div className="toast-container" role="region" aria-label="Notifications" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.type} ${t.exiting ? 'toast-exit' : ''}`}>
-            <div className="toast-icon">
-              {t.type === 'success' && (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{width: 14, height: 14}}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              )}
-              {t.type === 'error' && (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{width: 14, height: 14}}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
-              {t.type === 'info' && (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{width: 14, height: 14}}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                </svg>
-              )}
-            </div>
-            <div className="toast-content">{t.message}</div>
-            <button 
-              className="toast-close" 
-              onClick={() => {
-                setToasts((prev) => prev.filter((item) => item.id !== t.id));
-              }}
-            >
-              &times;
-            </button>
-            <div className="toast-progress"></div>
-          </div>
+          <ToastItem key={t.id} toast={t} onDismiss={dismissToast} />
         ))}
+      </div>
+    </div>
+  );
+}
+
+function ToastItem({ toast, onDismiss }) {
+  const [isPaused, setIsPaused] = useState(false);
+  const [remaining, setRemaining] = useState(toast.duration || 4500);
+  const startTimeRef = useRef(Date.now());
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (toast.exiting) return;
+
+    if (!isPaused) {
+      startTimeRef.current = Date.now();
+      timerRef.current = setTimeout(() => {
+        onDismiss(toast.id);
+      }, remaining);
+    } else {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isPaused, remaining, toast.id, toast.exiting, onDismiss]);
+
+  const handleMouseEnter = () => {
+    const elapsed = Date.now() - startTimeRef.current;
+    setRemaining((prev) => Math.max(0, prev - elapsed));
+    setIsPaused(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPaused(false);
+  };
+
+  const renderIcon = (type) => {
+    switch (type) {
+      case 'success':
+        return (
+          <svg className="toast-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+        );
+      case 'error':
+        return (
+          <svg className="toast-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+        );
+      case 'warning':
+        return (
+          <svg className="toast-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        );
+      case 'info':
+      default:
+        return (
+          <svg className="toast-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+        );
+    }
+  };
+
+  return (
+    <div
+      className={`toast toast-${toast.type} ${toast.exiting ? 'toast-exit' : ''}`}
+      role={toast.type === 'error' ? 'alert' : 'status'}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className="toast-accent-bar" />
+      <div className="toast-icon-wrapper">
+        {renderIcon(toast.type)}
+      </div>
+      <div className="toast-body">
+        {toast.title && <div className="toast-title">{toast.title}</div>}
+        <div className="toast-message">{toast.message}</div>
+      </div>
+      <button
+        type="button"
+        className="toast-close-btn"
+        onClick={() => onDismiss(toast.id)}
+        aria-label="Close notification"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      <div className="toast-progress-track">
+        <div
+          className="toast-progress-fill"
+          style={{
+            animationDuration: `${toast.duration || 4500}ms`,
+            animationPlayState: isPaused ? 'paused' : 'running'
+          }}
+        />
       </div>
     </div>
   );

@@ -5,11 +5,11 @@
 .attendance-page-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
-  padding-bottom: 24px;
+  padding-bottom: 16px;
   box-sizing: border-box;
 }
 
@@ -19,10 +19,11 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  margin-bottom: 2px;
 }
 
 .header-title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
@@ -30,15 +31,15 @@
 }
 
 .header-subtitle {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
-  margin: 4px 0 0 0;
+  margin: 2px 0 0 0;
 }
 
 .status-toast {
-  padding: 10px 16px;
+  padding: 8px 14px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -62,10 +63,10 @@
   background: var(--card-bg);
   border: 1px solid var(--border-default);
   border-radius: 14px;
-  padding: 20px 24px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   box-shadow: var(--shadow-md);
   box-sizing: border-box;
   transition: background-color 0.25s ease, border-color 0.25s ease;
@@ -79,7 +80,7 @@
 }
 
 .card-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
@@ -90,9 +91,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: 12px;
 }
 
@@ -125,36 +126,39 @@
 .attendance-top-grid {
   display: grid;
   grid-template-columns: 40% 60%;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
+  align-items: stretch;
 }
 
 .todays-att-card {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  height: 275px;
+  box-sizing: border-box;
 }
 
 .att-metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  padding: 16px 0;
+  gap: 6px;
+  padding: 8px 0;
   border-top: 1px solid var(--border-default);
   border-bottom: 1px solid var(--border-default);
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 .metric-col {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 0 4px;
+  gap: 2px;
+  padding: 0 2px;
 }
 
 .divider-left {
   border-left: 1px solid var(--border-default);
-  padding-left: 12px;
+  padding-left: 8px;
 }
 
 .metric-label {
@@ -164,7 +168,7 @@
 }
 
 .metric-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
@@ -181,8 +185,8 @@
 .att-action-buttons {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 4px;
+  gap: 10px;
+  margin-top: 2px;
 }
 
 .check-action-btn {
@@ -190,7 +194,7 @@
   background: var(--primary);
   color: #ffffff;
   border: none;
-  padding: 10px 18px;
+  padding: 8px 14px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 13px;
@@ -198,9 +202,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 10px var(--primary-soft);
+  box-shadow: 0 2px 8px var(--primary-soft);
 }
 
 .check-action-btn:hover:not(:disabled) {
@@ -220,7 +224,7 @@
   background: var(--surface-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-default);
-  padding: 10px 16px;
+  padding: 8px 12px;
   border-radius: 8px;
   font-weight: 600;
   font-size: 13px;
@@ -243,7 +247,7 @@
   gap: 6px;
   font-size: 11px;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .live-dot {
@@ -256,14 +260,19 @@
 /* Right Column: Check-in Location Map Card */
 .location-map-card {
   position: relative;
+  height: 275px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .refresh-loc-icon-btn {
   background: var(--surface-secondary);
   border: 1px solid var(--border-default);
   color: var(--text-muted);
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -280,7 +289,8 @@
 .map-container-wrapper {
   position: relative;
   width: 100%;
-  height: 220px;
+  flex: 1;
+  min-height: 185px;
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--border-default);
@@ -289,37 +299,37 @@
 /* Floating Overlay Box inside Map */
 .map-floating-overlay {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
   z-index: 1000;
   background: var(--card-bg);
   border: 1px solid var(--border-default);
-  border-radius: 10px;
-  padding: 12px 14px;
-  max-width: 230px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  max-width: 210px;
   box-shadow: var(--shadow-lg);
   pointer-events: none;
 }
 
 .overlay-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 2px 0;
+  margin: 0 0 1px 0;
 }
 
 .overlay-address {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
-  margin: 0 0 6px 0;
-  line-height: 1.3;
+  margin: 0 0 4px 0;
+  line-height: 1.25;
 }
 
 .overlay-coords {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 2px 0;
+  margin: 0 0 1px 0;
 }
 
 .overlay-time {
@@ -332,7 +342,7 @@
 .attendance-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 14px;
   width: 100%;
 }
 
@@ -340,26 +350,28 @@
   background: var(--card-bg);
   border: 1px solid var(--border-default);
   border-radius: 12px;
-  padding: 16px 18px;
+  padding: 10px 14px;
+  height: 110px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  justify-content: space-between;
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 .card-top-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 4px;
+  gap: 8px;
 }
 
 .summary-icon-box {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -370,10 +382,11 @@
   font-size: 12px;
   color: var(--text-muted);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .summary-value {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.1;
@@ -382,12 +395,13 @@
 .summary-sub {
   font-size: 11px;
   color: var(--text-muted);
+  line-height: 1.1;
 }
 
 .sparkline-container {
-  height: 18px;
+  height: 22px;
   width: 100%;
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .sparkline-svg {
@@ -398,20 +412,26 @@
 /* 4. Full-Width Attendance History Card */
 .history-table-card {
   width: 100%;
+  min-height: 260px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .table-controls-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 12px;
 }
 
 .filter-controls-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -438,31 +458,32 @@
   color: var(--text-primary);
   border: 1px solid var(--border-default);
   border-radius: 8px;
-  padding: 6px 12px 6px 32px;
+  padding: 6px 12px 6px 30px;
   font-size: 12px;
   outline: none;
-  width: 160px;
+  width: 150px;
   transition: width 0.2s ease;
 }
 
 .search-input:focus {
   border-color: var(--primary);
-  width: 200px;
+  width: 180px;
 }
 
 .search-icon {
   position: absolute;
-  left: 10px;
-  width: 14px;
-  height: 14px;
+  left: 9px;
+  width: 13px;
+  height: 13px;
   color: var(--text-muted);
   pointer-events: none;
 }
 
 .history-table-wrapper {
+  flex: 1;
   overflow-x: auto;
   width: 100%;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .att-history-table {
@@ -474,16 +495,18 @@
 .att-history-table th {
   background: var(--table-header-background);
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   padding: 10px 14px;
   border-bottom: 1px solid var(--border-default);
 }
 
 .att-history-table td {
-  padding: 12px 14px;
+  padding: 11px 14px;
   border-bottom: 1px solid var(--border-default);
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-primary);
   vertical-align: middle;
 }
@@ -545,8 +568,8 @@
   background: var(--surface-secondary);
   border: 1px solid var(--border-default);
   color: var(--text-muted);
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -565,8 +588,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding-top: 12px;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 14px;
   border-top: 1px solid var(--border-default);
 }
 
@@ -587,8 +611,8 @@
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 500;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
@@ -618,10 +642,22 @@
 @media (max-width: 1100px) {
   .attendance-top-grid {
     grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .todays-att-card, .location-map-card {
+    height: auto;
+    min-height: 260px;
   }
 
   .attendance-summary-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .summary-card {
+    height: auto;
+    min-height: 105px;
   }
 }
 
@@ -629,6 +665,7 @@
   .attendance-page-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 8px;
   }
 
   .header-right {
@@ -642,7 +679,7 @@
 
   .att-metrics-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 10px;
   }
 
   .divider-left {
@@ -652,11 +689,13 @@
 
   .attendance-summary-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .table-controls-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 8px;
   }
 
   .filter-controls-group {
@@ -667,3 +706,4 @@
     width: 100% !important;
   }
 }
+
