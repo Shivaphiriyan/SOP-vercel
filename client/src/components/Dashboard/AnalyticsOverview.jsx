@@ -179,7 +179,7 @@ export default function AnalyticsOverview({ summaryData, role }) {
     return () => chart2Inst.current?.destroy();
   }, [checklistDays, resolvedTheme, isLight]);
 
-  // 3. Chart 3: Attendance Trend / SOP Trend Line Chart
+  // 3. Chart 3: Last 7 Days Attendance Summary (Grouped Vertical Bar Chart)
   useEffect(() => {
     if (!chart3Ref.current) return;
     const ctx = chart3Ref.current.getContext('2d');
@@ -192,29 +192,25 @@ export default function AnalyticsOverview({ summaryData, role }) {
     const absentData = dailyTrend.map((t) => t.absent);
 
     chart3Inst.current = new Chart(ctx, {
-      type: 'line',
+      type: 'bar',
       data: {
         labels,
         datasets: [
           {
-            label: isAdminOrSupervisor ? 'Present' : 'SOP Views',
+            label: 'Present',
             data: presentData,
-            borderColor: '#8b5cf6',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            tension: 0.4,
-            borderWidth: 2.5,
-            pointRadius: 4,
-            pointBackgroundColor: '#8b5cf6'
+            backgroundColor: '#10b981',
+            borderRadius: 6,
+            barPercentage: 0.6,
+            categoryPercentage: 0.75
           },
           {
-            label: isAdminOrSupervisor ? 'Absent' : 'Checklist Runs',
+            label: 'Absent',
             data: absentData,
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            tension: 0.4,
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: '#ef4444'
+            backgroundColor: isLight ? 'rgba(239, 68, 68, 0.85)' : '#ef4444',
+            borderRadius: 6,
+            barPercentage: 0.6,
+            categoryPercentage: 0.75
           }
         ]
       },
@@ -222,26 +218,62 @@ export default function AnalyticsOverview({ summaryData, role }) {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { grid: { color: gridColor }, ticks: { color: textColor } },
-          y: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1 }, beginAtZero: true }
+          x: {
+            grid: { display: false },
+            ticks: { color: textColor, font: { size: 12 } }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Employees',
+              color: textColor,
+              font: { size: 11, weight: '600' }
+            },
+            grid: { color: gridColor },
+            ticks: {
+              color: textColor,
+              stepSize: 1,
+              precision: 0
+            },
+            beginAtZero: true
+          }
         },
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true,
+            position: 'top',
+            align: 'end',
+            labels: {
+              color: textColor,
+              boxWidth: 10,
+              boxHeight: 10,
+              usePointStyle: true,
+              pointStyle: 'circle',
+              font: { size: 12, weight: '500' }
+            }
+          },
           tooltip: {
             backgroundColor: tooltipBg,
             titleColor: tooltipText,
             bodyColor: tooltipText,
             borderColor: gridColor,
-            borderWidth: 1
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              label: (context) => {
+                const val = context.parsed.y;
+                return `${context.dataset.label}: ${val} employee${val === 1 ? '' : 's'}`;
+              }
+            }
           }
         }
       }
     });
 
     return () => chart3Inst.current?.destroy();
-  }, [dailyTrend, isAdminOrSupervisor, resolvedTheme]);
+  }, [dailyTrend, resolvedTheme, isLight, textColor, gridColor, tooltipBg, tooltipText]);
 
-  // 4. Chart 4: Employee Activity Horizontal Bar Chart (Admin Only)
+  // 4. Chart 4: Top SOP Contributors Horizontal Bar Chart (Ranked)
   useEffect(() => {
     if (!isAdminOrSupervisor || !chart4Ref.current) return;
     const ctx = chart4Ref.current.getContext('2d');
@@ -249,11 +281,12 @@ export default function AnalyticsOverview({ summaryData, role }) {
 
     if (chart4Inst.current) chart4Inst.current.destroy();
 
+    // Top 5 employees sorted descending by checklist runs
     const topEmployees = [
-      { name: 'Shivaphiriyan', checklists: 8 },
-      { name: 'Operator 1', checklists: 5 },
-      { name: 'Supervisor 1', checklists: 3 }
-    ];
+      { name: 'Shivaphiriyan', role: 'Admin', checklists: 8 },
+      { name: 'Operator 1', role: 'Operator', checklists: 5 },
+      { name: 'Supervisor 1', role: 'Supervisor', checklists: 3 }
+    ].sort((a, b) => b.checklists - a.checklists).slice(0, 5);
 
     chart4Inst.current = new Chart(ctx, {
       type: 'bar',
@@ -261,10 +294,11 @@ export default function AnalyticsOverview({ summaryData, role }) {
         labels: topEmployees.map((e) => e.name),
         datasets: [
           {
-            label: 'Checklists Run',
+            label: 'Checklist Runs Completed',
             data: topEmployees.map((e) => e.checklists),
             backgroundColor: '#8b5cf6',
-            borderRadius: 6
+            borderRadius: 6,
+            barThickness: 16
           }
         ]
       },
@@ -273,8 +307,21 @@ export default function AnalyticsOverview({ summaryData, role }) {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 2 }, beginAtZero: true },
-          y: { grid: { display: false }, ticks: { color: textColor } }
+          x: {
+            title: {
+              display: true,
+              text: 'Checklist Runs',
+              color: textColor,
+              font: { size: 11, weight: '600' }
+            },
+            grid: { color: gridColor },
+            ticks: { color: textColor, stepSize: 1, precision: 0 },
+            beginAtZero: true
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: textColor, font: { size: 12, weight: '500' } }
+          }
         },
         plugins: {
           legend: { display: false },
@@ -283,14 +330,23 @@ export default function AnalyticsOverview({ summaryData, role }) {
             titleColor: tooltipText,
             bodyColor: tooltipText,
             borderColor: gridColor,
-            borderWidth: 1
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              label: (context) => {
+                const emp = topEmployees[context.dataIndex];
+                return `${emp.role} • ${context.parsed.x} runs completed`;
+              }
+            }
           }
         }
       }
     });
 
     return () => chart4Inst.current?.destroy();
-  }, [isAdminOrSupervisor, resolvedTheme]);
+  }, [isAdminOrSupervisor, resolvedTheme, textColor, gridColor, tooltipBg, tooltipText]);
+
+  const hasAttendanceData = dailyTrend && dailyTrend.length > 0;
 
   return (
     <div className="analytics-section-panel">
@@ -346,25 +402,35 @@ export default function AnalyticsOverview({ summaryData, role }) {
         </div>
       </div>
 
-      {/* Trend Line Chart Card */}
+      {/* Grouped Vertical Bar Chart Card */}
       <div className="chart-card trend-chart-card">
         <div className="trend-card-header">
-          <h3 className="chart-card-title">{isAdminOrSupervisor ? '7-Day Attendance & Leave Trend' : 'Weekly Activity Trend'}</h3>
-          <div className="trend-legend-badges">
-            <span className="badge-item"><span className="badge-dot" style={{ background: '#8b5cf6' }} /> {isAdminOrSupervisor ? 'Present' : 'SOP Views'}</span>
-            <span className="badge-item"><span className="badge-dot" style={{ background: '#ef4444' }} /> {isAdminOrSupervisor ? 'Absent' : 'Checklists'}</span>
+          <div>
+            <h3 className="chart-card-title">Last 7 Days Attendance Summary</h3>
+            <p className="chart-card-sub" style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Daily breakdown of present and absent personnel</p>
           </div>
         </div>
-        <div className="line-canvas-container">
-          <canvas ref={chart3Ref} />
-        </div>
+        {!hasAttendanceData ? (
+          <div className="chart-empty-state" style={{ height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+            No attendance data is available for the last seven days.
+          </div>
+        ) : (
+          <div className="line-canvas-container" style={{ height: '240px' }}>
+            <canvas ref={chart3Ref} />
+          </div>
+        )}
       </div>
 
-      {/* Horizontal Bar Chart (Admin Only) */}
+      {/* Horizontal Bar Ranking Chart (Admin / Supervisor) */}
       {isAdminOrSupervisor && (
         <div className="chart-card trend-chart-card">
-          <h3 className="chart-card-title">Top Active Employees (Checklists Run)</h3>
-          <div style={{ height: '120px', width: '100%', marginTop: '10px' }}>
+          <div className="trend-card-header">
+            <div>
+              <h3 className="chart-card-title">Top SOP Contributors</h3>
+              <p className="chart-card-sub" style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Most active team members by checklist runs completed</p>
+            </div>
+          </div>
+          <div style={{ height: '180px', width: '100%', marginTop: '10px' }}>
             <canvas ref={chart4Ref} />
           </div>
         </div>

@@ -18,6 +18,7 @@ import AnalyticsOverview from './components/Dashboard/AnalyticsOverview';
 import RecentActivity from './components/Dashboard/RecentActivity';
 import LoadingSkeleton from './components/Dashboard/LoadingSkeleton';
 import EmptyState from './components/Dashboard/EmptyState';
+import QuickActions from './components/Dashboard/QuickActions';
 import ThemeToggle from './components/ThemeToggle';
 import NotificationBell from './components/Notifications/NotificationBell';
 import Notifications from './Notifications';
@@ -1027,16 +1028,16 @@ function App() {
                   ) : (
                     <>
                       {/* 4 Compact Statistics Cards Grid */}
+                      {/* 4 Primary KPI Statistics Cards Grid */}
                       <div className="dashboard-stat-grid">
                         {decoded?.role === 'admin' || decoded?.role === 'supervisor' ? (
                           <>
                             <StatCard
-                              title="Total Employees"
-                              number={summaryData?.totalEmployees ?? 5}
+                              title="Active Employees"
+                              number={summaryData?.totalEmployees ?? 0}
                               iconColor="icon-blue"
                               onClick={() => navigateTo('team')}
                               description="Active workforce"
-                              trend="▲ 1 this month"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
@@ -1044,12 +1045,11 @@ function App() {
                               }
                             />
                             <StatCard
-                              title="Checklists Completed"
-                              number={summaryData?.completedToday ?? 2}
+                              title="Present Today"
+                              number={summaryData?.attendanceBreakdown?.present ?? 0}
                               iconColor="icon-green"
-                              onClick={() => navigateTo('checklist_history')}
-                              description="Today's executions"
-                              trend="▲ 2 today"
+                              onClick={() => navigateTo('attendance')}
+                              description="Checked in today"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1057,12 +1057,11 @@ function App() {
                               }
                             />
                             <StatCard
-                              title="Pending Leaves"
+                              title="Pending Leave Requests"
                               number={summaryData?.pendingLeaves ?? 0}
                               iconColor="icon-yellow"
                               onClick={() => navigateTo('leave_requests', 'team_requests')}
                               description="Awaiting review"
-                              trend="—"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
@@ -1070,12 +1069,11 @@ function App() {
                               }
                             />
                             <StatCard
-                              title="Active SOPs"
-                              number={summaryData?.activeSops ?? 4}
+                              title="Published SOPs"
+                              number={summaryData?.activeSops ?? 0}
                               iconColor="icon-purple"
                               onClick={() => navigateTo('sops')}
-                              description="Procedure templates"
-                              trend="▲ 1 this week"
+                              description="Active procedure templates"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -1086,12 +1084,11 @@ function App() {
                         ) : decoded?.role === 'auditor' ? (
                           <>
                             <StatCard
-                              title="Active SOPs"
-                              number={summaryData?.activeSops ?? 4}
+                              title="Published SOPs"
+                              number={summaryData?.activeSops ?? 0}
                               iconColor="icon-purple"
                               onClick={() => navigateTo('sops')}
                               description="Compliance templates"
-                              trend="▲ 1 this week"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -1100,11 +1097,10 @@ function App() {
                             />
                             <StatCard
                               title="Checklists Completed"
-                              number={summaryData?.completedToday ?? 2}
+                              number={summaryData?.completedToday ?? 0}
                               iconColor="icon-green"
                               onClick={() => navigateTo('checklist_history')}
                               description="Audited executions"
-                              trend="▲ 2 today"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1112,12 +1108,11 @@ function App() {
                               }
                             />
                             <StatCard
-                              title="Total Employees"
-                              number={summaryData?.totalEmployees ?? 5}
+                              title="Active Employees"
+                              number={summaryData?.totalEmployees ?? 0}
                               iconColor="icon-blue"
                               onClick={null}
                               description="Active personnel"
-                              trend="— Read-only"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
@@ -1126,11 +1121,10 @@ function App() {
                             />
                             <StatCard
                               title="Audit Trail Logs"
-                              number={activityData?.length ?? 5}
+                              number={activityData?.length ?? 0}
                               iconColor="icon-yellow"
                               onClick={() => navigateTo('audit_log')}
                               description="System event logs"
-                              trend="▲ Live feed"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -1142,11 +1136,10 @@ function App() {
                           <>
                             <StatCard
                               title="Hours This Week"
-                              number={`${summaryData?.hoursThisWeek ?? 45.5}h`}
+                              number={`${summaryData?.hoursThisWeek ?? 0}h`}
                               iconColor="icon-blue"
                               onClick={() => navigateTo('attendance')}
                               description="Current workweek"
-                              trend="▲ Recorded time"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1158,8 +1151,7 @@ function App() {
                               number={summaryData?.pendingLeaves ?? 0}
                               iconColor="icon-yellow"
                               onClick={() => navigateTo('leave_requests', 'my_requests')}
-                              description="My applications"
-                              trend="—"
+                              description="Applications pending"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
@@ -1168,11 +1160,10 @@ function App() {
                             />
                             <StatCard
                               title="Active Checklists"
-                              number={summaryData?.activeChecklists ?? 1}
+                              number={summaryData?.activeChecklists ?? 0}
                               iconColor="icon-purple"
                               onClick={() => navigateTo('tasks')}
                               description="Pending execution"
-                              trend="▲ Assigned tasks"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1181,11 +1172,10 @@ function App() {
                             />
                             <StatCard
                               title="Assigned SOPs"
-                              number={4}
+                              number={summaryData?.activeSops ?? 4}
                               iconColor="icon-green"
                               onClick={() => navigateTo('sops')}
-                              description="Read-only procedures"
-                              trend="▲ Available"
+                              description="Active procedure templates"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -1202,15 +1192,21 @@ function App() {
                           summaryData={summaryData}
                           role={decoded?.role}
                         />
-                        <RecentActivity
-                          activityData={activityData}
-                          role={decoded?.role}
-                          onNavigate={navigateTo}
-                          canViewAuditLogs={decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor'}
-                          isLoading={dashboardLoading}
-                          isError={!!dashboardError}
-                          onRetry={fetchDashboardData}
-                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                          <RecentActivity
+                            activityData={activityData}
+                            role={decoded?.role}
+                            onNavigate={navigateTo}
+                            canViewAuditLogs={decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor'}
+                            isLoading={dashboardLoading}
+                            isError={!!dashboardError}
+                            onRetry={fetchDashboardData}
+                          />
+                          <QuickActions
+                            role={decoded?.role}
+                            onNavigate={navigateTo}
+                          />
+                        </div>
                       </div>
                     </>
                   )}
