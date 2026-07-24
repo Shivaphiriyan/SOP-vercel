@@ -425,6 +425,17 @@
 
 .btn-decline-sm:hover { opacity: 0.9; }
 
+/* Dark mode specific overrides */
+[data-theme='dark'] .btn-approve-sm {
+  background: var(--success);
+  color: #ffffff;
+}
+[data-theme='dark'] .btn-decline-sm {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+
 .icon-action-btn {
   background: var(--surface-secondary);
   border: 1px solid var(--border-default);
