@@ -109,22 +109,47 @@
 .stat-card-compact {
   background: var(--card-bg);
   border: 1px solid var(--border-default);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px 18px;
   display: flex;
   align-items: center;
   gap: 14px;
   min-height: 90px;
   box-shadow: var(--shadow-sm);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  will-change: transform, opacity, box-shadow;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              border-color 0.25s ease, 
+              background-color 0.25s ease;
   cursor: pointer;
   outline: none;
+  animation: statCardFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+/* Staggered entrance animation for 4 cards */
+.dashboard-stat-grid > :nth-child(1) { animation-delay: 0.04s; }
+.dashboard-stat-grid > :nth-child(2) { animation-delay: 0.08s; }
+.dashboard-stat-grid > :nth-child(3) { animation-delay: 0.12s; }
+.dashboard-stat-grid > :nth-child(4) { animation-delay: 0.16s; }
+
+@keyframes statCardFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .stat-card-compact:hover, .stat-card-compact:focus-visible {
-  transform: translateY(-3px) scale(1.008);
-  border-color: var(--primary-border);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.12), 
+              0 0 0 1px var(--primary-border, rgba(139, 92, 246, 0.3));
 }
 
 .stat-card-left {
@@ -132,18 +157,53 @@
 }
 
 .stat-icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              box-shadow 0.25s ease,
+              background-color 0.25s ease;
+  will-change: transform;
 }
 
-.icon-blue { background: var(--info-soft); color: var(--info); }
-.icon-green { background: var(--success-soft); color: var(--success); }
-.icon-yellow { background: var(--warning-soft); color: var(--warning); }
-.icon-purple { background: var(--primary-soft); color: var(--primary); }
+.stat-card-compact:hover .stat-icon-box {
+  transform: scale(1.08);
+}
+
+.icon-blue { 
+  background: var(--info-soft, rgba(59, 130, 246, 0.12)); 
+  color: var(--info, #3b82f6); 
+}
+.stat-card-compact:hover .icon-blue {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.icon-green { 
+  background: var(--success-soft, rgba(16, 185, 129, 0.12)); 
+  color: var(--success, #10b981); 
+}
+.stat-card-compact:hover .icon-green {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.icon-yellow { 
+  background: var(--warning-soft, rgba(245, 158, 11, 0.12)); 
+  color: var(--warning, #f59e0b); 
+}
+.stat-card-compact:hover .icon-yellow {
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.icon-purple { 
+  background: var(--primary-soft, rgba(139, 92, 246, 0.12)); 
+  color: var(--primary, #8b5cf6); 
+}
+.stat-card-compact:hover .icon-purple {
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+}
 
 .stat-card-content {
   display: flex;

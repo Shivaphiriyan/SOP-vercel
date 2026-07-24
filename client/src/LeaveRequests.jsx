@@ -29,6 +29,7 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
 
   const [leaveNoticeDays, setLeaveNoticeDays] = useState(3);
   const isAdminOrSupervisor = decoded?.role === 'admin' || decoded?.role === 'supervisor';
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -156,9 +157,17 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
       const data = await res.json();
 
       if (!res.ok) {
-        setFormError(data.error || 'Failed to submit leave request.');
+        const errorMsg = data.error || 'Failed to submit leave request.';
+        setFormError(errorMsg);
+        if (showToast) showToast({ title: 'Submission Failed', message: errorMsg, type: 'error' });
       } else {
-        if (showToast) showToast('Leave request submitted successfully.', 'success');
+        if (showToast) {
+          showToast({
+            title: 'Created Successfully',
+            message: 'Leave request submitted successfully for manager review.',
+            type: 'success'
+          });
+        }
         setStartDate('');
         setEndDate('');
         setReason('');
@@ -167,13 +176,17 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
         await fetchMyRequests();
       }
     } catch (err) {
-      setFormError('Network error. Please try again later.');
+      const netMsg = 'Network connection error. Please try again.';
+      setFormError(netMsg);
+      if (showToast) showToast({ title: 'Network Error', message: netMsg, type: 'error' });
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleUpdateStatus = async (id, status) => {
+    if (actionLoadingId) return; // prevent concurrent actions
+    setActionLoadingId(id);
     try {
       const res = await fetch(`${API_URL}/leave-requests/${id}`, {
         method: 'PATCH',
@@ -185,11 +198,28 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
       });
 
       if (res.ok) {
-        if (showToast) showToast(`Leave request ${status} successfully.`, 'success');
-        fetchTeamRequests();
+        // Optimistically update UI state
+        setTeamRequests((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status } : r))
+        );
+        if (showToast) {
+          showToast({
+            title: 'Updated Successfully',
+            message: `Leave request ${status} successfully.`,
+            type: 'success'
+          });
+        }
+        // Optionally refetch to sync any additional data
+        // await fetchTeamRequests();
+      } else {
+        const data = await res.json();
+        if (showToast) showToast({ title: 'Update Failed', message: data.error || 'Failed to update leave request.', type: 'error' });
       }
     } catch (err) {
       console.error(err);
+      if (showToast) showToast({ title: 'Network Error', message: 'Network connection error while updating leave request.', type: 'error' });
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -494,11 +524,19 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
                       <td style={{ textAlign: 'right' }}>
                         {req.status === 'pending' ? (
                           <div className="action-buttons-group">
-                            <button className="btn-approve-sm" onClick={() => handleUpdateStatus(req.id, 'approved')}>
-                              Approve
+                            <button
+                              className="btn-approve-sm"
+                              onClick={() => handleUpdateStatus(req.id, 'approved')}
+                              disabled={actionLoadingId === req.id}
+                            >
+                              {actionLoadingId === req.id ? 'Approving...' : 'Approve'}
                             </button>
-                            <button className="btn-decline-sm" onClick={() => handleUpdateStatus(req.id, 'declined')}>
-                              Decline
+                            <button
+                              className="btn-decline-sm"
+                              onClick={() => handleUpdateStatus(req.id, 'declined')}
+                              disabled={actionLoadingId === req.id}
+                            >
+                              {actionLoadingId === req.id ? 'Declining...' : 'Decline'}
                             </button>
                           </div>
                         ) : (

@@ -93,12 +93,17 @@ export async function createAuditLog(
     const requestMethod = req ? req.method : null;
     const requestPath = req ? (req.originalUrl || req.path) : null;
 
-    const actorUserId = params.actorUserId !== undefined ? params.actorUserId : (req?.user?.userId || null);
-    const actorNameSnapshot = params.actorNameSnapshot !== undefined ? params.actorNameSnapshot : (req?.user?.role ? `${req.user.role}:${req.user.userId}` : null);
+    const reqUser = req ? (req as any).user : null;
+    const rawActorId = params.actorUserId !== undefined ? params.actorUserId : (reqUser?.userId || null);
+    const actorUserId = (rawActorId && typeof rawActorId === 'string' && rawActorId.trim() !== '') ? rawActorId : null;
+    const actorNameSnapshot = params.actorNameSnapshot !== undefined ? params.actorNameSnapshot : (reqUser?.role ? `${reqUser.role}:${reqUser.userId}` : null);
 
     const oldValues = params.oldValues ? sanitizeAuditData(params.oldValues) : Prisma.JsonNull;
     const newValues = params.newValues ? sanitizeAuditData(params.newValues) : Prisma.JsonNull;
     const metadata = params.metadata ? sanitizeAuditData(params.metadata) : Prisma.JsonNull;
+
+    const rawEntityId = params.entityId;
+    const entityId = (rawEntityId && typeof rawEntityId === 'string' && rawEntityId.trim() !== '') ? rawEntityId : null;
 
     await (prismaClient as any).audit_logs.create({
       data: {
@@ -108,7 +113,7 @@ export async function createAuditLog(
         actor_email_snapshot: params.actorEmailSnapshot || null,
         action: params.action,
         entity_type: params.entityType || 'system',
-        entity_id: params.entityId || null,
+        entity_id: entityId,
         description: params.description || `Action ${params.action} performed`,
         old_values: oldValues,
         new_values: newValues,

@@ -18,7 +18,6 @@ import AnalyticsOverview from './components/Dashboard/AnalyticsOverview';
 import RecentActivity from './components/Dashboard/RecentActivity';
 import LoadingSkeleton from './components/Dashboard/LoadingSkeleton';
 import EmptyState from './components/Dashboard/EmptyState';
-import QuickActions from './components/Dashboard/QuickActions';
 import ThemeToggle from './components/ThemeToggle';
 import NotificationBell from './components/Notifications/NotificationBell';
 import Notifications from './Notifications';
@@ -192,7 +191,7 @@ function App() {
     }, 280);
   }, []);
 
-  const showToast = useCallback((optsOrMsg, type = 'success', customTitle, customDuration = 4500) => {
+  const showToast = useCallback((optsOrMsg, type = 'success', customTitle, customDuration) => {
     let message = '';
     let toastType = type;
     let title = customTitle;
@@ -201,10 +200,28 @@ function App() {
     if (typeof optsOrMsg === 'object' && optsOrMsg !== null) {
       message = optsOrMsg.message || '';
       toastType = optsOrMsg.type || type || 'success';
-      title = optsOrMsg.title;
+      title = optsOrMsg.title || customTitle;
       duration = optsOrMsg.duration || customDuration;
     } else {
       message = String(optsOrMsg || '');
+    }
+
+    if (!duration) {
+      switch (toastType) {
+        case 'success':
+          duration = 3500;
+          break;
+        case 'info':
+          duration = 4000;
+          break;
+        case 'warning':
+          duration = 5000;
+          break;
+        case 'error':
+        default:
+          duration = 7500;
+          break;
+      }
     }
 
     if (!title) {
@@ -213,10 +230,10 @@ function App() {
           title = 'Success';
           break;
         case 'error':
-          title = 'Error';
+          title = 'Operation Failed';
           break;
         case 'warning':
-          title = 'Warning';
+          title = 'Attention Required';
           break;
         case 'info':
         default:
@@ -226,7 +243,7 @@ function App() {
     }
 
     const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev.slice(-4), { id, message, type: toastType, title, duration }]);
+    setToasts((prev) => [...prev.slice(-3), { id, message, type: toastType, title, duration }]);
   }, []);
 
   const handleLogin = async (e) => {
@@ -586,6 +603,7 @@ function App() {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       disabled={loading}
+                      autoComplete="username"
                     />
                   </div>
 
@@ -600,6 +618,7 @@ function App() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         disabled={loading}
+                        autoComplete="current-password"
                       />
                       <button
                         type="button"
@@ -653,9 +672,9 @@ function App() {
 
                 <div className="auth-switch-footer">
                   {isSignup ? (
-                    <>Already have an account? <span onClick={() => { setIsSignup(false); setError(''); }} className="switch-link">Log In</span></>
+                    <>Already have an account? <span onClick={() => { setIsSignup(false); setError(''); setUsername(''); setPassword(''); setTenantSlug(''); setCompanyName(''); }} className="switch-link">Log In</span></>
                   ) : (
-                    <>Need an account? <span onClick={() => { setIsSignup(true); setError(''); }} className="switch-link">Sign Up</span></>
+                    <>Need an account? <span onClick={() => { setIsSignup(true); setError(''); setUsername(''); setPassword(''); setTenantSlug(''); setCompanyName(''); }} className="switch-link">Sign Up</span></>
                   )}
                 </div>
               </div>
@@ -1192,21 +1211,15 @@ function App() {
                           summaryData={summaryData}
                           role={decoded?.role}
                         />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                          <RecentActivity
-                            activityData={activityData}
-                            role={decoded?.role}
-                            onNavigate={navigateTo}
-                            canViewAuditLogs={decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor'}
-                            isLoading={dashboardLoading}
-                            isError={!!dashboardError}
-                            onRetry={fetchDashboardData}
-                          />
-                          <QuickActions
-                            role={decoded?.role}
-                            onNavigate={navigateTo}
-                          />
-                        </div>
+                        <RecentActivity
+                          activityData={activityData}
+                          role={decoded?.role}
+                          onNavigate={navigateTo}
+                          canViewAuditLogs={decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor'}
+                          isLoading={dashboardLoading}
+                          isError={!!dashboardError}
+                          onRetry={fetchDashboardData}
+                        />
                       </div>
                     </>
                   )}
@@ -1214,7 +1227,7 @@ function App() {
               )}
 
             {activeTab === 'attendance' && (
-              decoded?.page_permissions?.attendance === false ? <AccessDeniedScreen /> : <Attendance token={token} decoded={decoded} />
+              decoded?.page_permissions?.attendance === false ? <AccessDeniedScreen /> : <Attendance token={token} decoded={decoded} showToast={showToast} />
             )}
 
             {activeTab === 'leave_requests' && (
@@ -1222,7 +1235,7 @@ function App() {
             )}
 
             {activeTab === 'payroll' && (
-              decoded?.page_permissions?.payroll === false ? <AccessDeniedScreen /> : <Payroll token={token} decoded={decoded} />
+              decoded?.page_permissions?.payroll === false ? <AccessDeniedScreen /> : <Payroll token={token} decoded={decoded} showToast={showToast} />
             )}
 
             {activeTab === 'sops' && (
@@ -1230,7 +1243,7 @@ function App() {
             )}
 
             {activeTab === 'tasks' && (
-              <MyTasks token={token} decoded={decoded} />
+              <MyTasks token={token} decoded={decoded} showToast={showToast} />
             )}
 
             {activeTab === 'checklist_history' && (
@@ -1341,18 +1354,18 @@ function App() {
 
             {activeTab === 'audit_log' && (
               decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor' ? (
-                <AuditLogs token={token} />
+                <AuditLogs token={token} showToast={showToast} />
               ) : (
                 <AccessDeniedScreen />
               )
             )}
 
             {activeTab === 'team' && decoded?.role === 'admin' && (
-              <Team token={token} decoded={decoded} />
+              <Team token={token} decoded={decoded} showToast={showToast} />
             )}
 
             {activeTab === 'settings' && decoded?.role === 'admin' && (
-              <Settings token={token} />
+              <Settings token={token} showToast={showToast} />
             )}
 
             {activeTab === 'not_found' && (

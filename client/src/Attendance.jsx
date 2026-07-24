@@ -36,7 +36,7 @@ function MapBoundsController({ location, officeLocation, isOutside }) {
   return null;
 }
 
-export default function Attendance({ token, decoded }) {
+export default function Attendance({ token, decoded, showToast }) {
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [accuracy, setAccuracy] = useState(null);
@@ -171,16 +171,23 @@ export default function Attendance({ token, decoded }) {
   };
 
   useEffect(() => {
+    fetchOfficeLocation();
+    fetchMyAttendance();
+  }, [token]);
+
+  useEffect(() => {
     if (viewAdmin) {
       fetchAdminAttendance();
     }
   }, [viewAdmin]);
 
-  const handleAction = async (isCheckIn) => {
+  const handleCheckInOut = async (isCheckIn) => {
     if (actionLoading) return;
     if (!location) {
-      setStatusMessage("Location not available. Please allow location access.");
+      const msg = "Location not available. Please allow location access in your browser.";
+      setStatusMessage(msg);
       setStatusType('error');
+      if (showToast) showToast({ title: 'Location Error', message: msg, type: 'error' });
       return;
     }
 
@@ -206,16 +213,28 @@ export default function Attendance({ token, decoded }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setStatusMessage(data.error || "Action failed");
+        const errorMsg = data.error || "Attendance action failed.";
+        setStatusMessage(errorMsg);
         setStatusType('error');
+        if (showToast) showToast({ title: 'Attendance Failed', message: errorMsg, type: 'error' });
       } else {
-        setStatusMessage(isCheckIn ? "Checked in successfully" : "Checked out successfully");
+        const successMsg = isCheckIn ? "Attendance check-in recorded successfully." : "Attendance check-out recorded successfully.";
+        setStatusMessage(successMsg);
         setStatusType('success');
+        if (showToast) {
+          showToast({ 
+            title: isCheckIn ? 'Checked In Successfully' : 'Checked Out Successfully', 
+            message: successMsg, 
+            type: 'success' 
+          });
+        }
         await fetchMyAttendance();
       }
     } catch (e) {
-      setStatusMessage("Network error. Please try again.");
+      const netMsg = "Network connection error while recording attendance.";
+      setStatusMessage(netMsg);
       setStatusType('error');
+      if (showToast) showToast({ title: 'Network Error', message: netMsg, type: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -410,9 +429,10 @@ export default function Attendance({ token, decoded }) {
 
           <div className="att-action-buttons">
             <button
+              type="button"
               className={`btn-primary check-action-btn ${isCompletedToday ? 'btn-disabled' : ''}`}
               disabled={actionLoading || loading || !location || isCompletedToday}
-              onClick={() => handleAction(!isCheckedIn)}
+              onClick={() => handleCheckInOut(!isCheckedIn)}
             >
               {actionLoading ? (
                 <span>Loading...</span>

@@ -46,7 +46,7 @@ router.post('/admin/users', async (req, res, next) => {
         username: username.trim(),
         password_hash: passwordHash,
         role: role,
-        status: 'invited',
+        status: 'active',
         page_permissions: defaultPermissionsForRole(role) as any
       },
       select: {
@@ -85,6 +85,7 @@ router.post('/admin/users', async (req, res, next) => {
 
     res.status(201).json(newUser);
   } catch (error: any) {
+    console.error('[POST /admin/users ERROR]:', error);
     // Handle unique constraint violation from Prisma (duplicate username in same tenant)
     if (error.code === 'P2002' && error.meta?.target?.includes('username')) {
       return res.status(400).json({ error: 'A user with this username already exists in this workspace.' });
@@ -281,17 +282,22 @@ router.patch('/admin/users/:id/permissions', async (req, res, next) => {
 
 /**
  * GET /admin/settings
- * Retrieve the current tenant's location settings.
+ * Retrieve the current tenant's company settings.
  */
 router.get('/admin/settings', async (req, res, next) => {
   try {
     const tenant = await getPrisma().tenants.findUnique({
       where: { id: req.user!.tenantId },
       select: {
+        id: true,
+        name: true,
+        plan_tier: true,
+        billing_status: true,
         location_lat: true,
         location_lng: true,
         location_radius_m: true,
-        leave_notice_days: true
+        leave_notice_days: true,
+        created_at: true
       }
     });
 
@@ -307,15 +313,54 @@ router.get('/admin/settings', async (req, res, next) => {
 
 /**
  * PATCH /admin/settings
- * Update the current tenant's location settings.
+ * Update the current tenant's company settings.
  */
 router.patch('/admin/settings', async (req, res, next) => {
-  const { location_lat, location_lng, location_radius_m, leave_notice_days } = req.body;
+  const { name, location_lat, location_lng, location_radius_m, leave_notice_days } = req.body;
+
+  // 1. Validation
+  if (name !== undefined) {
+    if (typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'Company name cannot be empty.' });
+    }
+  }
+
+  if (location_lat !== undefined && location_lat !== null) {
+    const latNum = Number(location_lat);
+    if (isNaN(latNum) || latNum < -90 || latNum > 90) {
+      return res.status(400).json({ error: 'Latitude must be a valid coordinate between -90 and 90.' });
+    }
+  }
+
+  if (location_lng !== undefined && location_lng !== null) {
+    const lngNum = Number(location_lng);
+    if (isNaN(lngNum) || lngNum < -180 || lngNum > 180) {
+      return res.status(400).json({ error: 'Longitude must be a valid coordinate between -180 and 180.' });
+    }
+  }
+
+  if (location_radius_m !== undefined && location_radius_m !== null) {
+    const radiusNum = Number(location_radius_m);
+    if (isNaN(radiusNum) || radiusNum < 10) {
+      return res.status(400).json({ error: 'Geofence radius must be at least 10 meters.' });
+    }
+  }
+
+  if (leave_notice_days !== undefined && leave_notice_days !== null) {
+    const noticeNum = Number(leave_notice_days);
+    if (isNaN(noticeNum) || noticeNum < 0) {
+      return res.status(400).json({ error: 'Leave notice days must be 0 or a positive number.' });
+    }
+  }
 
   try {
     const currentTenant = await getPrisma().tenants.findUnique({
       where: { id: req.user!.tenantId },
       select: {
+        id: true,
+        name: true,
+        plan_tier: true,
+        billing_status: true,
         location_lat: true,
         location_lng: true,
         location_radius_m: true,
@@ -326,16 +371,22 @@ router.patch('/admin/settings', async (req, res, next) => {
     const updatedTenant = await getPrisma().tenants.update({
       where: { id: req.user!.tenantId },
       data: {
+        ...(name !== undefined && name !== null && { name: String(name).trim() }),
         ...(location_lat !== undefined && { location_lat }),
         ...(location_lng !== undefined && { location_lng }),
         ...(location_radius_m !== undefined && { location_radius_m }),
         ...(leave_notice_days !== undefined && { leave_notice_days })
       },
       select: {
+        id: true,
+        name: true,
+        plan_tier: true,
+        billing_status: true,
         location_lat: true,
         location_lng: true,
         location_radius_m: true,
-        leave_notice_days: true
+        leave_notice_days: true,
+        created_at: true
       }
     });
 
@@ -346,7 +397,7 @@ router.patch('/admin/settings', async (req, res, next) => {
         action: 'settings.updated',
         entityType: 'tenant',
         entityId: req.user!.tenantId,
-        description: 'Updated workspace settings',
+        description: `Updated company settings for '${updatedTenant.name}'`,
         oldValues: currentTenant,
         newValues: updatedTenant
       },

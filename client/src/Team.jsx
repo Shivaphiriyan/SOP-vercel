@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_URL } from './config/api';
 import './Team.css';
 
-const Team = ({ token, decoded }) => {
+const Team = ({ token, decoded, showToast }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -78,9 +78,12 @@ const Team = ({ token, decoded }) => {
       }
 
       setUsers(prev => prev.filter(user => user.id !== userId));
+      if (showToast) showToast({ title: 'Deleted Successfully', message: 'Employee account removed successfully.', type: 'success' });
     } catch (err) {
       console.error(err);
-      setError('Could not connect to server to delete user.');
+      const errMsg = 'Could not connect to server to delete user.';
+      setError(errMsg);
+      if (showToast) showToast({ title: 'Operation Failed', message: errMsg, type: 'error' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -114,18 +117,23 @@ const Team = ({ token, decoded }) => {
       });
       const data = await response.json();
       if (!response.ok) {
-        setAccessError(data.error || 'Failed to update access permissions.');
+        const errorMsg = data.error || 'Failed to update access permissions.';
+        setAccessError(errorMsg);
+        if (showToast) showToast({ title: 'Update Failed', message: errorMsg, type: 'error' });
         return;
       }
       
       setUsers(prev => prev.map(u => u.id === selectedUserForAccess.id ? { ...u, page_permissions: accessForm } : u));
       setAccessSuccess(true);
+      if (showToast) showToast({ title: 'Updated Successfully', message: `Page permissions updated for "${selectedUserForAccess.username}".`, type: 'success' });
       setTimeout(() => {
         setIsAccessModalOpen(false);
       }, 800);
     } catch (err) {
       console.error(err);
-      setAccessError('Could not connect to server.');
+      const netMsg = 'Could not connect to server.';
+      setAccessError(netMsg);
+      if (showToast) showToast({ title: 'Network Error', message: netMsg, type: 'error' });
     } finally {
       setAccessSaveLoading(false);
     }
@@ -138,7 +146,9 @@ const Team = ({ token, decoded }) => {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!addForm.username || !addForm.tempPassword || !addForm.role) {
-      setAddError('All fields are required.');
+      const warnMsg = 'Please complete all required fields.';
+      setAddError(warnMsg);
+      if (showToast) showToast({ title: 'Validation Warning', message: warnMsg, type: 'warning' });
       return;
     }
     setAddLoading(true);
@@ -157,16 +167,21 @@ const Team = ({ token, decoded }) => {
       const data = await response.json();
       
       if (!response.ok) {
-        setAddError(data.error || 'Failed to create user.');
+        const errorMsg = data.error || 'Failed to create user.';
+        setAddError(errorMsg);
+        if (showToast) showToast({ title: 'Creation Failed', message: errorMsg, type: 'error' });
         return;
       }
       
       setUsers(prev => [data, ...prev]);
       setSuccessDetails({ username: addForm.username, tempPassword: addForm.tempPassword });
+      if (showToast) showToast({ title: 'Created Successfully', message: `Employee account "${addForm.username}" created successfully.`, type: 'success' });
       setAddForm({ username: '', tempPassword: '', role: 'operator' });
     } catch (err) {
       console.error(err);
-      setAddError('Could not connect to server.');
+      const netMsg = 'Could not connect to server.';
+      setAddError(netMsg);
+      if (showToast) showToast({ title: 'Network Error', message: netMsg, type: 'error' });
     } finally {
       setAddLoading(false);
     }

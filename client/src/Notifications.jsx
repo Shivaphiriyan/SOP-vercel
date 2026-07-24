@@ -50,7 +50,7 @@ export default function Notifications({ token, onNavigate, showToast }) {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
         );
-        if (showToast) showToast('Notification marked as read', 'info');
+        if (showToast) showToast({ title: 'Updated Successfully', message: 'Notification marked as read.', type: 'info' });
       }
     } catch (err) {
       console.error(err);
@@ -65,7 +65,7 @@ export default function Notifications({ token, onNavigate, showToast }) {
       });
       if (res.ok) {
         setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-        if (showToast) showToast('All notifications marked as read', 'success');
+        if (showToast) showToast({ title: 'Updated Successfully', message: 'All notifications marked as read.', type: 'success' });
       }
     } catch (err) {
       console.error(err);
@@ -81,7 +81,7 @@ export default function Notifications({ token, onNavigate, showToast }) {
       if (res.ok) {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
         setTotal((prev) => Math.max(0, prev - 1));
-        if (showToast) showToast('Notification deleted', 'info');
+        if (showToast) showToast({ title: 'Deleted Successfully', message: 'Notification removed successfully.', type: 'info' });
       }
     } catch (err) {
       console.error(err);

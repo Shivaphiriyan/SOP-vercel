@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_URL } from './config/api';
 import './AuditLogs.css';
 
-export default function AuditLogs({ token }) {
+export default function AuditLogs({ token, showToast }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

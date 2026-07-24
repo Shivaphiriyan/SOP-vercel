@@ -33,9 +33,19 @@ router.post('/auth/login', async (req, res, next) => {
   try {
     // 1. Look up the tenant by slugifying the name (public table, no RLS)
     const tenants = await prisma.tenants.findMany();
-    const tenant = tenants.find(
-      (t) => slugify(t.name) === slugify(tenantSlug) || t.name.toLowerCase() === tenantSlug.toLowerCase()
-    );
+    const inputSlug = slugify(tenantSlug);
+    const cleanInput = inputSlug.replace(/-(corp|co|inc|ltd)$/i, '');
+    
+    const tenant = tenants.find((t) => {
+      const tSlug = slugify(t.name);
+      const cleanTSlug = tSlug.replace(/-(corp|co|inc|ltd)$/i, '');
+      return (
+        tSlug === inputSlug ||
+        t.name.toLowerCase() === tenantSlug.toLowerCase() ||
+        tSlug.replace(/-/g, '') === inputSlug.replace(/-/g, '') ||
+        (cleanInput.length > 2 && cleanTSlug === cleanInput)
+      );
+    });
 
     if (!tenant) {
       return res.status(401).json({ error: 'Invalid tenant' });
@@ -63,13 +73,13 @@ router.post('/auth/login', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    if (user.status !== 'active') {
+    if (user.status === 'disabled') {
       await createAuditLog({
         tenantId: tenant.id,
         actorUserId: user.id,
         actorNameSnapshot: `${user.role}:${user.username}`,
         action: 'auth.login_failed',
-        description: `Login attempt rejected for inactive user '${username}'`,
+        description: `Login attempt rejected for disabled user '${username}'`,
         status: 'failed',
         metadata: { username, status: user.status }
       }, req);
@@ -89,6 +99,18 @@ router.post('/auth/login', async (req, res, next) => {
         metadata: { username }
       }, req);
       return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    // Auto-promote invited status to active on first successful login
+    if (user.status === 'invited') {
+      await prisma.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant = '${tenant.id}'`);
+        await tx.users.update({
+          where: { id: user.id },
+          data: { status: 'active' }
+        });
+      });
+      user.status = 'active';
     }
 
     // Record successful login audit
