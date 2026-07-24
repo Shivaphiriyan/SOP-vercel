@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import { API_URL } from './config/api';
 import Attendance from './Attendance';
@@ -18,6 +18,7 @@ import AnalyticsOverview from './components/Dashboard/AnalyticsOverview';
 import RecentActivity from './components/Dashboard/RecentActivity';
 import LoadingSkeleton from './components/Dashboard/LoadingSkeleton';
 import EmptyState from './components/Dashboard/EmptyState';
+import QuickActions from './components/Dashboard/QuickActions';
 import ThemeToggle from './components/ThemeToggle';
 import NotificationBell from './components/Notifications/NotificationBell';
 import Notifications from './Notifications';
@@ -179,23 +180,54 @@ function App() {
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState('');
 
-  // Toast Notification State
+  // Toast Notification State & Logic
   const [toasts, setToasts] = useState([]);
 
-  const showToast = (message, type = 'success') => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    
-    // Auto dismiss
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, exiting: true } : t))
+    );
     setTimeout(() => {
-      setToasts((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, exiting: true } : t))
-      );
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 250);
-    }, 3000);
-  };
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 280);
+  }, []);
+
+  const showToast = useCallback((optsOrMsg, type = 'success', customTitle, customDuration = 4500) => {
+    let message = '';
+    let toastType = type;
+    let title = customTitle;
+    let duration = customDuration;
+
+    if (typeof optsOrMsg === 'object' && optsOrMsg !== null) {
+      message = optsOrMsg.message || '';
+      toastType = optsOrMsg.type || type || 'success';
+      title = optsOrMsg.title;
+      duration = optsOrMsg.duration || customDuration;
+    } else {
+      message = String(optsOrMsg || '');
+    }
+
+    if (!title) {
+      switch (toastType) {
+        case 'success':
+          title = 'Success';
+          break;
+        case 'error':
+          title = 'Error';
+          break;
+        case 'warning':
+          title = 'Warning';
+          break;
+        case 'info':
+        default:
+          title = 'Information';
+          break;
+      }
+    }
+
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev.slice(-4), { id, message, type: toastType, title, duration }]);
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -996,16 +1028,16 @@ function App() {
                   ) : (
                     <>
                       {/* 4 Compact Statistics Cards Grid */}
+                      {/* 4 Primary KPI Statistics Cards Grid */}
                       <div className="dashboard-stat-grid">
                         {decoded?.role === 'admin' || decoded?.role === 'supervisor' ? (
                           <>
                             <StatCard
-                              title="Total Employees"
-                              number={summaryData?.totalEmployees ?? 5}
+                              title="Active Employees"
+                              number={summaryData?.totalEmployees ?? 0}
                               iconColor="icon-blue"
                               onClick={() => navigateTo('team')}
                               description="Active workforce"
-                              trend="▲ 1 this month"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
@@ -1013,12 +1045,11 @@ function App() {
                               }
                             />
                             <StatCard
-                              title="Checklists Completed"
-                              number={summaryData?.completedToday ?? 2}
+                              title="Present Today"
+                              number={summaryData?.attendanceBreakdown?.present ?? 0}
                               iconColor="icon-green"
-                              onClick={() => navigateTo('checklist_history')}
-                              description="Today's executions"
-                              trend="▲ 2 today"
+                              onClick={() => navigateTo('attendance')}
+                              description="Checked in today"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1026,12 +1057,11 @@ function App() {
                               }
                             />
                             <StatCard
-                              title="Pending Leaves"
+                              title="Pending Leave Requests"
                               number={summaryData?.pendingLeaves ?? 0}
                               iconColor="icon-yellow"
                               onClick={() => navigateTo('leave_requests', 'team_requests')}
                               description="Awaiting review"
-                              trend="—"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
@@ -1039,12 +1069,11 @@ function App() {
                               }
                             />
                             <StatCard
-                              title="Active SOPs"
-                              number={summaryData?.activeSops ?? 4}
+                              title="Published SOPs"
+                              number={summaryData?.activeSops ?? 0}
                               iconColor="icon-purple"
                               onClick={() => navigateTo('sops')}
-                              description="Procedure templates"
-                              trend="▲ 1 this week"
+                              description="Active procedure templates"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -1055,12 +1084,11 @@ function App() {
                         ) : decoded?.role === 'auditor' ? (
                           <>
                             <StatCard
-                              title="Active SOPs"
-                              number={summaryData?.activeSops ?? 4}
+                              title="Published SOPs"
+                              number={summaryData?.activeSops ?? 0}
                               iconColor="icon-purple"
                               onClick={() => navigateTo('sops')}
                               description="Compliance templates"
-                              trend="▲ 1 this week"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -1069,11 +1097,10 @@ function App() {
                             />
                             <StatCard
                               title="Checklists Completed"
-                              number={summaryData?.completedToday ?? 2}
+                              number={summaryData?.completedToday ?? 0}
                               iconColor="icon-green"
                               onClick={() => navigateTo('checklist_history')}
                               description="Audited executions"
-                              trend="▲ 2 today"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1081,12 +1108,11 @@ function App() {
                               }
                             />
                             <StatCard
-                              title="Total Employees"
-                              number={summaryData?.totalEmployees ?? 5}
+                              title="Active Employees"
+                              number={summaryData?.totalEmployees ?? 0}
                               iconColor="icon-blue"
                               onClick={null}
                               description="Active personnel"
-                              trend="— Read-only"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0110.089 21c-2.907 0-5.542-1.09-7.533-2.893m0 0A4.125 4.125 0 0110 16.03c1.973 0 3.738.694 5 1.838m-9.75-2.78c.002.083.002.167.002.252H2.25m3.75-2.25a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm9.75-3a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
@@ -1095,11 +1121,10 @@ function App() {
                             />
                             <StatCard
                               title="Audit Trail Logs"
-                              number={activityData?.length ?? 5}
+                              number={activityData?.length ?? 0}
                               iconColor="icon-yellow"
                               onClick={() => navigateTo('audit_log')}
                               description="System event logs"
-                              trend="▲ Live feed"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -1111,11 +1136,10 @@ function App() {
                           <>
                             <StatCard
                               title="Hours This Week"
-                              number={`${summaryData?.hoursThisWeek ?? 45.5}h`}
+                              number={`${summaryData?.hoursThisWeek ?? 0}h`}
                               iconColor="icon-blue"
                               onClick={() => navigateTo('attendance')}
                               description="Current workweek"
-                              trend="▲ Recorded time"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1127,8 +1151,7 @@ function App() {
                               number={summaryData?.pendingLeaves ?? 0}
                               iconColor="icon-yellow"
                               onClick={() => navigateTo('leave_requests', 'my_requests')}
-                              description="My applications"
-                              trend="—"
+                              description="Applications pending"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
@@ -1137,11 +1160,10 @@ function App() {
                             />
                             <StatCard
                               title="Active Checklists"
-                              number={summaryData?.activeChecklists ?? 1}
+                              number={summaryData?.activeChecklists ?? 0}
                               iconColor="icon-purple"
                               onClick={() => navigateTo('tasks')}
                               description="Pending execution"
-                              trend="▲ Assigned tasks"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1150,11 +1172,10 @@ function App() {
                             />
                             <StatCard
                               title="Assigned SOPs"
-                              number={4}
+                              number={summaryData?.activeSops ?? 4}
                               iconColor="icon-green"
                               onClick={() => navigateTo('sops')}
-                              description="Read-only procedures"
-                              trend="▲ Available"
+                              description="Active procedure templates"
                               icon={
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: 20, height: 20 }}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -1171,15 +1192,21 @@ function App() {
                           summaryData={summaryData}
                           role={decoded?.role}
                         />
-                        <RecentActivity
-                          activityData={activityData}
-                          role={decoded?.role}
-                          onNavigate={navigateTo}
-                          canViewAuditLogs={decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor'}
-                          isLoading={dashboardLoading}
-                          isError={!!dashboardError}
-                          onRetry={fetchDashboardData}
-                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                          <RecentActivity
+                            activityData={activityData}
+                            role={decoded?.role}
+                            onNavigate={navigateTo}
+                            canViewAuditLogs={decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor'}
+                            isLoading={dashboardLoading}
+                            isError={!!dashboardError}
+                            onRetry={fetchDashboardData}
+                          />
+                          <QuickActions
+                            role={decoded?.role}
+                            onNavigate={navigateTo}
+                          />
+                        </div>
                       </div>
                     </>
                   )}
@@ -1337,38 +1364,119 @@ function App() {
       )}
 
       {/* Toast Notification Container */}
-      <div className="toast-container">
+      <div className="toast-container" role="region" aria-label="Notifications" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.type} ${t.exiting ? 'toast-exit' : ''}`}>
-            <div className="toast-icon">
-              {t.type === 'success' && (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{width: 14, height: 14}}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              )}
-              {t.type === 'error' && (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{width: 14, height: 14}}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
-              {t.type === 'info' && (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{width: 14, height: 14}}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                </svg>
-              )}
-            </div>
-            <div className="toast-content">{t.message}</div>
-            <button 
-              className="toast-close" 
-              onClick={() => {
-                setToasts((prev) => prev.filter((item) => item.id !== t.id));
-              }}
-            >
-              &times;
-            </button>
-            <div className="toast-progress"></div>
-          </div>
+          <ToastItem key={t.id} toast={t} onDismiss={dismissToast} />
         ))}
+      </div>
+    </div>
+  );
+}
+
+function ToastItem({ toast, onDismiss }) {
+  const [isPaused, setIsPaused] = useState(false);
+  const [remaining, setRemaining] = useState(toast.duration || 4500);
+  const startTimeRef = useRef(Date.now());
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (toast.exiting) return;
+
+    if (!isPaused) {
+      startTimeRef.current = Date.now();
+      timerRef.current = setTimeout(() => {
+        onDismiss(toast.id);
+      }, remaining);
+    } else {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isPaused, remaining, toast.id, toast.exiting, onDismiss]);
+
+  const handleMouseEnter = () => {
+    const elapsed = Date.now() - startTimeRef.current;
+    setRemaining((prev) => Math.max(0, prev - elapsed));
+    setIsPaused(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPaused(false);
+  };
+
+  const renderIcon = (type) => {
+    switch (type) {
+      case 'success':
+        return (
+          <svg className="toast-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+        );
+      case 'error':
+        return (
+          <svg className="toast-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+        );
+      case 'warning':
+        return (
+          <svg className="toast-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        );
+      case 'info':
+      default:
+        return (
+          <svg className="toast-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+        );
+    }
+  };
+
+  return (
+    <div
+      className={`toast toast-${toast.type} ${toast.exiting ? 'toast-exit' : ''}`}
+      role={toast.type === 'error' ? 'alert' : 'status'}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className="toast-accent-bar" />
+      <div className="toast-icon-wrapper">
+        {renderIcon(toast.type)}
+      </div>
+      <div className="toast-body">
+        {toast.title && <div className="toast-title">{toast.title}</div>}
+        <div className="toast-message">{toast.message}</div>
+      </div>
+      <button
+        type="button"
+        className="toast-close-btn"
+        onClick={() => onDismiss(toast.id)}
+        aria-label="Close notification"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      <div className="toast-progress-track">
+        <div
+          className="toast-progress-fill"
+          style={{
+            animationDuration: `${toast.duration || 4500}ms`,
+            animationPlayState: isPaused ? 'paused' : 'running'
+          }}
+        />
       </div>
     </div>
   );
