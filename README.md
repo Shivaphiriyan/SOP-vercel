@@ -4,7 +4,7 @@ A modern, multi-tenant Standard Operating Procedure (SOP) management platform fe
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 From the root directory, you can run both the client and server using the npm workspace commands:
 
@@ -39,7 +39,7 @@ npm run dev:client
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```text
 sop-saas/
@@ -63,7 +63,7 @@ sop-saas/
 
 ---
 
-## ⚙️ Backend Setup & Configuration
+##  Backend Setup & Configuration
 
 1. **Environment Variables:**
    Navigate to the `/server` directory and copy the template `.env.example` to a new `.env` file:
@@ -92,7 +92,7 @@ sop-saas/
 
 ---
 
-## 💻 Frontend Setup
+##  Frontend Setup
 
 1. **Running the Client:**
    Navigate to the `/client` directory and start Vite:
@@ -104,7 +104,7 @@ sop-saas/
 
 ---
 
-## 🌟 Key Features
+##  Key Features
 
 - **Multi-Tenant SOP Execution:** SOPs are scoped by tenant, allowing isolated organizations to use the application safely.
 - **Checklist Run Logging:** Steps within an SOP can be executed with logs and evidence photo uploads.
