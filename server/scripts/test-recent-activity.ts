@@ -57,10 +57,10 @@ async function runRecentActivitySecurityTests() {
 
     await getPrisma().audit_logs.createMany({
       data: [
-        { tenant_id: tenantA.id, user_id: adminA.id, action: 'sop.created', metadata: {} },
-        { tenant_id: tenantA.id, user_id: operatorA.id, action: 'attendance.check_in', metadata: {} },
-        { tenant_id: tenantA.id, user_id: operatorA.id, action: 'sop.signed', metadata: {} },
-        { tenant_id: tenantA.id, user_id: adminA.id, action: 'payroll.processed', metadata: {} }
+        { tenant_id: tenantA.id, actor_user_id: adminA.id, action: 'sop.created', metadata: {} },
+        { tenant_id: tenantA.id, actor_user_id: operatorA.id, action: 'attendance.check_in', metadata: {} },
+        { tenant_id: tenantA.id, actor_user_id: operatorA.id, action: 'sop.signed', metadata: {} },
+        { tenant_id: tenantA.id, actor_user_id: adminA.id, action: 'payroll.processed', metadata: {} }
       ]
     });
   });
@@ -77,7 +77,7 @@ async function runRecentActivitySecurityTests() {
 
     await getPrisma().audit_logs.createMany({
       data: [
-        { tenant_id: tenantB.id, user_id: adminB.id, action: 'user.created', metadata: {} }
+        { tenant_id: tenantB.id, actor_user_id: adminB.id, action: 'user.created', metadata: {} }
       ]
     });
   });
@@ -93,9 +93,9 @@ async function runRecentActivitySecurityTests() {
   // TEST 2: Operator A sees ONLY own logs (Strict user_id filter)
   await runInTenantContext(tenantA.id, async () => {
     const operatorLogs = await getPrisma().audit_logs.findMany({
-      where: { user_id: operatorA.id }
+      where: { actor_user_id: operatorA.id }
     });
-    const containsOtherUser = operatorLogs.some((l) => l.user_id !== operatorA.id);
+    const containsOtherUser = operatorLogs.some((l) => l.actor_user_id !== operatorA.id);
     assert.strictEqual(containsOtherUser, false, 'Security violation: Operator received another user\'s logs!');
     assert.strictEqual(operatorLogs.length, 2, 'Operator should see exactly 2 own logs');
     console.log('✓ TEST 2 PASSED: Operator receives ONLY own activity records');

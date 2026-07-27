@@ -1,4 +1,3 @@
-import { crypto } from 'crypto';
 import { basePrisma } from '../src/context';
 import { randomUUID } from 'crypto';
 
@@ -163,9 +162,25 @@ async function runDuplicateAttendanceTests() {
   assert(rejected.length === 1, 'Exactly one concurrent check-in failed with unique constraint rejection');
 
   console.log('\n--- ALL DUPLICATE ATTENDANCE TESTS COMPLETED SUCCESSFULLY ---');
+
+  // Clean up created test data
+  try {
+    await basePrisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant = '00000000-0000-0000-0000-000000000000'`);
+      await tx.$executeRawUnsafe(`DELETE FROM attendance_logs WHERE tenant_id IN ('${tenantId1}', '${tenantId2}')`);
+      await tx.$executeRawUnsafe(`DELETE FROM users WHERE tenant_id IN ('${tenantId1}', '${tenantId2}')`);
+      await tx.$executeRawUnsafe(`DELETE FROM tenants WHERE id IN ('${tenantId1}', '${tenantId2}')`);
+    });
+  } catch (err) {
+    // Ignore cleanup error
+  }
 }
 
-runDuplicateAttendanceTests().catch((err) => {
-  console.error('\nDUPLICATE ATTENDANCE TEST SUITE FAILED:', err);
-  process.exit(1);
-});
+runDuplicateAttendanceTests()
+  .catch((err) => {
+    console.error('\nDUPLICATE ATTENDANCE TEST SUITE FAILED:', err);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await basePrisma.$disconnect();
+  });
