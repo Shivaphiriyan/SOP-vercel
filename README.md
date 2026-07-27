@@ -20,7 +20,7 @@ npm run dev:client
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ### Frontend (`/client`)
 - **Framework:** React 19 (TypeScript)
