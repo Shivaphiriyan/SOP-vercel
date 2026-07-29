@@ -31,6 +31,12 @@ const corsOptions = {
 // Configure CORS and handle OPTIONS preflight explicitly
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 // Apply security headers with cross-origin policy enabled
 app.use(
