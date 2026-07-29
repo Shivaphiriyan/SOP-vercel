@@ -21,15 +21,16 @@ import { errorHandler } from './middleware/error';
 
 const app = express();
 
-// Configure CORS (Must be before helmet and rate limiters for OPTIONS preflight)
-app.use(
-  cors({
-    origin: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-  })
-);
+const corsOptions = {
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+// Configure CORS and handle OPTIONS preflight explicitly
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Apply security headers with cross-origin policy enabled
 app.use(
