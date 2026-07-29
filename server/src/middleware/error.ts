@@ -11,6 +11,13 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     return next(err);
   }
 
+  // Ensure CORS headers are attached on error responses
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
   // Log full error details (stack trace, request info) to server console
   console.error('=== UNHANDLED EXCEPTION ===');
   console.error(`Timestamp: ${new Date().toISOString()}`);
@@ -27,6 +34,6 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
   console.error('Error Details:', err.stack || err);
   console.error('===========================');
 
-  // Return generic error message to the client, hiding internal details
-  res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  // Return specific error message to client
+  res.status(500).json({ error: err.message || 'Internal server error' });
 };

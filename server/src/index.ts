@@ -45,10 +45,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Apply security headers with cross-origin policy enabled
+// Apply security headers without blocking cross-origin requests
 app.use(
   helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' }
+    crossOriginResourcePolicy: false,
+    crossOriginOpenerPolicy: false
   })
 );
 
