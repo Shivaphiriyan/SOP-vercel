@@ -21,28 +21,20 @@ import { errorHandler } from './middleware/error';
 
 const app = express();
 
-// Apply essential security headers
-app.use(helmet());
-
-// Configure secure CORS
+// Configure CORS (Must be before helmet and rate limiters for OPTIONS preflight)
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like server-to-server or curl requests)
-      if (!origin) return callback(null, true);
-      if (
-        config.frontendUrls.includes(origin) ||
-        !config.isProduction ||
-        origin.endsWith('.vercel.app') ||
-        origin.includes('localhost')
-      ) {
-        return callback(null, true);
-      }
-      return callback(null, true);
-    },
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
+  })
+);
+
+// Apply security headers with cross-origin policy enabled
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
   })
 );
 
