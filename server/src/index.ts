@@ -21,6 +21,9 @@ import { errorHandler } from './middleware/error';
 
 const app = express();
 
+// Trust reverse proxy (Required for Render / Cloudflare rate limiting)
+app.set('trust proxy', 1);
+
 const corsOptions = {
   origin: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -51,6 +54,7 @@ const apiLimiter = rateLimit({
   limit: 1000,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: { error: 'Too many requests from this IP, please try again later.' }
 });
 app.use(apiLimiter);
@@ -61,6 +65,7 @@ const authLimiter = rateLimit({
   limit: 50,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: { error: 'Too many authentication attempts, please try again later.' }
 });
 app.use('/auth/login', authLimiter);
