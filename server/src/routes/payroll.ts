@@ -73,8 +73,8 @@ router.get(
         }
       });
 
-      const employeesBreakdown = [];
-      const flaggedEmployees = [];
+      const employeesBreakdown: any[] = [];
+      const flaggedEmployees: any[] = [];
       let tenantTotal = 0;
 
       for (const user of users) {

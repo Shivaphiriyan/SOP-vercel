@@ -195,8 +195,8 @@ router.get(
       });
 
       // Build day-by-day series from rangeStart through today
-      const dailyTrend = [];
-      const checklistDays = [];
+      const dailyTrend: any[] = [];
+      const checklistDays: any[] = [];
 
       const msPerDay = 24 * 60 * 60 * 1000;
       const totalDays = Math.round((todayStart.getTime() - rangeStart.getTime()) / msPerDay) + 1;
