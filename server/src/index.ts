@@ -30,10 +30,15 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like server-to-server or curl requests)
       if (!origin) return callback(null, true);
-      if (config.frontendUrls.includes(origin) || !config.isProduction) {
+      if (
+        config.frontendUrls.includes(origin) ||
+        !config.isProduction ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost')
+      ) {
         return callback(null, true);
       }
-      return callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
