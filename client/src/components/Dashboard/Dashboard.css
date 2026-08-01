@@ -703,6 +703,12 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .dashboard-header-actions .desktop-only-toggle {
+    display: none !important;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-header-card {
     flex-direction: column;

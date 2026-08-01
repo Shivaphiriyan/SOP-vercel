@@ -77,7 +77,7 @@ export default function DashboardHeader({ username, tenantSlug, role, onNavigate
         <div style={{ flexShrink: 0 }}>
           <NotificationBell token={token} onNavigate={onNavigate} />
         </div>
-        <ThemeToggle />
+        <ThemeToggle className="desktop-only-toggle" />
       </div>
     </div>
   );
