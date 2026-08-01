@@ -438,12 +438,12 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
     <div className="checklist-run-overlay">
       <div className="run-header">
         <div className="run-title-group">
-          <button className="btn-back" onClick={onClose} title="Cancel Run">
+          <button className="btn-back" onClick={onClose} title="Cancel Run" aria-label="Close checklist execution">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{width: 24, height: 24}}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <h2 style={{margin: 0, fontSize: 20}}>{sop?.title}</h2>
             <div style={{fontSize: 13, color: 'var(--text-muted)', marginTop: 4}}>Execution Run #{run?.id?.substring(0, 8)}</div>
           </div>
@@ -454,18 +454,18 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
         <div className="scroll-progress-bar" style={{ width: `${scrollPercent}%` }}></div>
       </div>
 
-      <div className="run-content-wrapper">
+      <div className="run-content-wrapper" onScroll={handleScroll}>
         <div className="sop-content-panel">
           <div className="sop-content-scroll" ref={contentRef} onScroll={handleScroll}>
             <h3>{sop?.title}</h3>
             {/* Displaying simple text content for now as there's no rich text editor */}
-            <p style={{whiteSpace: 'pre-wrap'}}>{sop?.content?.description || "No general description provided for this SOP. Please follow the steps on the right carefully."}</p>
+            <p style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word'}}>{sop?.content?.description || "No general description provided for this SOP. Please follow the steps on the right carefully."}</p>
             
-            <div style={{marginTop: 48, padding: 24, background: 'var(--surface)', borderRadius: 8}}>
-              <h4 style={{marginTop: 0}}>Important Instructions</h4>
-              <ul style={{marginBottom: 0}}>
+            <div className="important-instructions-card">
+              <h4>Important Instructions</h4>
+              <ul>
                 <li>Read through the entire document above. The progress bar at the top will track your reading.</li>
-                <li>Complete each step in the checklist panel on the right.</li>
+                <li>Complete each step in the checklist panel below.</li>
                 <li>Once all steps are completed and the document is fully read, you may sign and complete the SOP.</li>
               </ul>
             </div>
@@ -498,8 +498,9 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
                     checked={isCompleted}
                     onChange={isAuditor ? undefined : () => handleToggleStep(step.id, isCompleted, requiresPhoto)}
                     disabled={isCompleted || isAuditor || (requiresPhoto && !step.evidence_url)} // Only allow checking, not unchecking, and disable completely for auditor/missing photo
+                    aria-label={`Step ${idx + 1}: ${step.description}`}
                   />
-                  <div style={{flex: 1}}>
+                  <div style={{flex: 1, minWidth: 0}}>
                     <div className="step-desc">{step.description}</div>
                     {/* Preview Thumbnail or Uploaded Photo during execution */}
                     {requiresPhoto && !isCompleted && !isAuditor && (previewUrls[step.id] || step.evidence_url) && (
@@ -507,6 +508,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
                         <img 
                           src={previewUrls[step.id] || getEvidenceUrl(step.evidence_url)} 
                           alt="Evidence preview" 
+                          className="evidence-preview-img"
                           style={{
                             maxWidth: '120px',
                             maxHeight: '120px',
@@ -521,7 +523,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
 
                     {requiresPhoto && !isCompleted && !isAuditor && (
                       <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="evidence-upload-controls">
                           <label 
                             className="btn-secondary" 
                             style={{
@@ -536,7 +538,8 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
                               borderRadius: '4px',
                               color: 'var(--text)',
                               transition: 'all 0.2s',
-                              userSelect: 'none'
+                              userSelect: 'none',
+                              minHeight: '36px'
                             }}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{width: 14, height: 14}}>
@@ -598,6 +601,7 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
                             <img 
                               src={getEvidenceUrl(step.evidence_url)} 
                               alt="Step Evidence" 
+                              className="evidence-preview-img"
                               style={{
                                 maxWidth: '100%',
                                 maxHeight: '180px',
@@ -662,14 +666,14 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
                     SOP Signed & Completed
                   </div>
                 )}
-                <button className="btn-secondary" onClick={onClose} style={{ width: '100%' }}>
+                <button className="btn-secondary" onClick={onClose} style={{ width: '100%', minHeight: '44px' }}>
                   Close
                 </button>
               </div>
             ) : isAuditor ? (
               <button 
                 className="btn-primary" 
-                style={{ width: '100%' }}
+                style={{ width: '100%', minHeight: '44px' }}
                 onClick={onClose}
               >
                 Close Preview
@@ -692,12 +696,12 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
                   </div>
                 )}
                 
-                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                <div className="footer-actions-group" style={{ display: 'flex', gap: '12px', width: '100%' }}>
                   <button 
                     className="btn-primary btn-sign" 
                     disabled={!canSign || signing}
                     onClick={handleSign}
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, minHeight: '44px' }}
                   >
                     {signing ? 'Signing...' : 'Sign & Complete SOP'}
                   </button>
@@ -711,7 +715,8 @@ const ChecklistRun = ({ runId: initialRunId, sopId, token, decoded, onClose }) =
                         borderColor: 'var(--error)',
                         color: 'var(--error)',
                         fontSize: '13px',
-                        fontWeight: 600
+                        fontWeight: 600,
+                        minHeight: '44px'
                       }}
                     >
                       Admin Complete
