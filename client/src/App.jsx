@@ -328,6 +328,7 @@ function App() {
   };
 
   const handleLogout = () => {
+    setIsSidebarOpen(false);
     setToken(null);
     setDecoded(null);
     setSummaryData(null);

@@ -331,7 +331,7 @@
   flex-direction: column;
   flex-shrink: 0;
   border-right: 1px solid var(--sidebar-border);
-  overflow-y: auto;
+  overflow: hidden;
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
@@ -341,6 +341,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .sidebar-logo {
@@ -367,11 +368,14 @@
 }
 
 .sidebar-nav {
-  flex-grow: 1;
+  flex: 1;
+  min-height: 0;
   padding: 24px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .nav-item {
@@ -423,11 +427,14 @@
 /* User Profile Badge at Sidebar Bottom */
 .sidebar-footer {
   padding: 20px 16px;
-  border-top: 1px solid var(--border);
+  padding-bottom: max(20px, calc(20px + env(safe-area-inset-bottom)));
+  border-top: 1px solid var(--sidebar-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-shrink: 0;
+  background: var(--sidebar-background);
 }
 
 .user-badge {
@@ -477,7 +484,9 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 6px;
+  padding: 8px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -997,6 +1006,8 @@
     left: -280px;
     width: 260px;
     height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     z-index: 1100;
     transition: left 0.3s ease;
     box-shadow: var(--shadow-lg);
