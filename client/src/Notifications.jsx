@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_URL } from './config/api';
 import './Notifications.css';
 
-export default function Notifications({ token, onNavigate, showToast }) {
+export default function Notifications({ token, onNavigate, showToast, refreshKey }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'all', 'unread', 'read'
@@ -13,7 +13,7 @@ export default function Notifications({ token, onNavigate, showToast }) {
 
   useEffect(() => {
     fetchNotifications();
-  }, [token, filter, typeFilter, page]);
+  }, [token, filter, typeFilter, page, refreshKey]);
 
   const fetchNotifications = async () => {
     setLoading(true);

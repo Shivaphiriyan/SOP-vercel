@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from './config/api';
 import './Payroll.css';
 
-const Payroll = ({ token, decoded, showToast }) => {
+const Payroll = ({ token, decoded, showToast, refreshKey }) => {
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
   
@@ -84,7 +84,7 @@ const Payroll = ({ token, decoded, showToast }) => {
     if (periodStart && periodEnd) {
       fetchPayroll();
     }
-  }, [token, periodStart, periodEnd]);
+  }, [token, periodStart, periodEnd, refreshKey]);
 
   const handleExportCSV = () => {
     if (!payrollData || !payrollData.employees) return;

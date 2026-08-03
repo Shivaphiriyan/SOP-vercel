@@ -12,7 +12,7 @@ const PRESET_CATEGORIES = [
   'General'
 ];
 
-const SopLibrary = ({ token, decoded, showToast }) => {
+const SopLibrary = ({ token, decoded, showToast, refreshKey }) => {
   const [sops, setSops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -85,7 +85,7 @@ const SopLibrary = ({ token, decoded, showToast }) => {
 
   useEffect(() => {
     fetchSops();
-  }, [token]);
+  }, [token, refreshKey]);
 
   // Open Assign Modal
   const handleOpenAssignModal = async (sop) => {

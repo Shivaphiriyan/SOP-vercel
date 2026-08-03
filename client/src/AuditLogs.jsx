@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_URL } from './config/api';
 import './AuditLogs.css';
 
-export default function AuditLogs({ token, showToast }) {
+export default function AuditLogs({ token, showToast, refreshKey }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -18,7 +18,7 @@ export default function AuditLogs({ token, showToast }) {
 
   useEffect(() => {
     fetchAuditLogs();
-  }, [token, page, actionFilter, entityFilter, statusFilter]);
+  }, [token, page, actionFilter, entityFilter, statusFilter, refreshKey]);
 
   const fetchAuditLogs = async () => {
     setLoading(true);

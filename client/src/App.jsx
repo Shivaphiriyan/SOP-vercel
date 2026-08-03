@@ -160,13 +160,46 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [leaveRequestsSubTab, setLeaveRequestsSubTab] = useState('my_requests');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    if (isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isSidebarOpen]);
+
+  useEffect(() => {
+    const handleRefetch = () => {
+      if (document.visibilityState === 'visible' && token) {
+        setRefreshKey((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener('focus', handleRefetch);
+    document.addEventListener('visibilitychange', handleRefetch);
+
+    return () => {
+      window.removeEventListener('focus', handleRefetch);
+      document.removeEventListener('visibilitychange', handleRefetch);
+    };
+  }, [token]);
 
   const navigateTo = (tab, subTab = null) => {
     let targetTab = tab;
     if (targetTab === 'audit-logs' || targetTab === 'audit_logs') {
       targetTab = 'audit_log';
     }
-    setActiveTab(targetTab);
+    if (targetTab === activeTab) {
+      setRefreshKey((prev) => prev + 1);
+    } else {
+      setActiveTab(targetTab);
+    }
     if (subTab && targetTab === 'leave_requests') {
       setLeaveRequestsSubTab(subTab);
     }
@@ -338,16 +371,16 @@ function App() {
     setActiveTab('dashboard');
   };
 
-  // Fetch Dashboard Stats once authenticated
+  // Fetch Dashboard Stats once authenticated or when active tab / refreshKey changes
   useEffect(() => {
-    if (token && decoded) {
+    if (token && decoded && activeTab === 'dashboard') {
       fetchDashboardData(analyticsTimeframe);
     }
-  }, [token, decoded]);
+  }, [token, decoded, activeTab, refreshKey]);
 
   // Re-fetch when analytics timeframe changes (after initial load)
   useEffect(() => {
-    if (token && decoded) {
+    if (token && decoded && activeTab === 'dashboard') {
       fetchDashboardData(analyticsTimeframe);
     }
   }, [analyticsTimeframe]);
@@ -500,7 +533,7 @@ function App() {
     if (token && activeTab === 'audit_log') {
       fetchAuditLogs();
     }
-  }, [activeTab, token]);
+  }, [activeTab, token, refreshKey]);
 
   return (
     <div style={{ display: 'flex', width: '100%', minHeight: '100vh', flexDirection: 'column' }}>
@@ -1246,23 +1279,23 @@ function App() {
               )}
 
             {activeTab === 'attendance' && (
-              decoded?.page_permissions?.attendance === false ? <AccessDeniedScreen /> : <Attendance token={token} decoded={decoded} showToast={showToast} />
+              decoded?.page_permissions?.attendance === false ? <AccessDeniedScreen /> : <Attendance token={token} decoded={decoded} showToast={showToast} refreshKey={refreshKey} />
             )}
 
             {activeTab === 'leave_requests' && (
-              decoded?.page_permissions?.leaveRequests === false ? <AccessDeniedScreen /> : <LeaveRequests token={token} decoded={decoded} initialTab={leaveRequestsSubTab} showToast={showToast} />
+              decoded?.page_permissions?.leaveRequests === false ? <AccessDeniedScreen /> : <LeaveRequests token={token} decoded={decoded} initialTab={leaveRequestsSubTab} showToast={showToast} refreshKey={refreshKey} />
             )}
 
             {activeTab === 'payroll' && (
-              decoded?.page_permissions?.payroll === false ? <AccessDeniedScreen /> : <Payroll token={token} decoded={decoded} showToast={showToast} />
+              decoded?.page_permissions?.payroll === false ? <AccessDeniedScreen /> : <Payroll token={token} decoded={decoded} showToast={showToast} refreshKey={refreshKey} />
             )}
 
             {activeTab === 'sops' && (
-              decoded?.page_permissions?.sopLibrary === false ? <AccessDeniedScreen /> : <SopLibrary token={token} decoded={decoded} showToast={showToast} />
+              decoded?.page_permissions?.sopLibrary === false ? <AccessDeniedScreen /> : <SopLibrary token={token} decoded={decoded} showToast={showToast} refreshKey={refreshKey} />
             )}
 
             {activeTab === 'tasks' && (
-              <MyTasks token={token} decoded={decoded} showToast={showToast} />
+              <MyTasks token={token} decoded={decoded} showToast={showToast} refreshKey={refreshKey} />
             )}
 
             {activeTab === 'checklist_history' && (
@@ -1368,23 +1401,23 @@ function App() {
             )}
 
             {activeTab === 'notifications' && (
-              <Notifications token={token} onNavigate={(tab) => navigateTo(tab)} showToast={showToast} />
+              <Notifications token={token} onNavigate={(tab) => navigateTo(tab)} showToast={showToast} refreshKey={refreshKey} />
             )}
 
             {activeTab === 'audit_log' && (
               decoded?.role === 'admin' || decoded?.role === 'supervisor' || decoded?.role === 'auditor' ? (
-                <AuditLogs token={token} showToast={showToast} />
+                <AuditLogs token={token} showToast={showToast} refreshKey={refreshKey} />
               ) : (
                 <AccessDeniedScreen />
               )
             )}
 
             {activeTab === 'team' && decoded?.role === 'admin' && (
-              <Team token={token} decoded={decoded} showToast={showToast} />
+              <Team token={token} decoded={decoded} showToast={showToast} refreshKey={refreshKey} />
             )}
 
             {activeTab === 'settings' && decoded?.role === 'admin' && (
-              <Settings token={token} showToast={showToast} />
+              <Settings token={token} showToast={showToast} refreshKey={refreshKey} />
             )}
 
             {activeTab === 'not_found' && (

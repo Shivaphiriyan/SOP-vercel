@@ -3,7 +3,7 @@ import { API_URL } from './config/api';
 import './SopLibrary.css'; // Reuse existing card styles
 import ChecklistRun from './ChecklistRun';
 
-const MyTasks = ({ token, decoded }) => {
+const MyTasks = ({ token, decoded, refreshKey }) => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -33,7 +33,7 @@ const MyTasks = ({ token, decoded }) => {
 
   useEffect(() => {
     fetchTasks();
-  }, [token]);
+  }, [token, refreshKey]);
 
   const handleCloseRun = () => {
     setActiveRunId(null);

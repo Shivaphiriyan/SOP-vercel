@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_URL } from './config/api';
 import './LeaveRequests.css';
 
-const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }) => {
+const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast, refreshKey }) => {
   const [activeTab, setActiveTab] = useState(initialTab); // 'my_requests' or 'team_requests'
   const [myRequests, setMyRequests] = useState([]);
   const [teamRequests, setTeamRequests] = useState([]);
@@ -41,7 +41,7 @@ const LeaveRequests = ({ token, decoded, initialTab = 'my_requests', showToast }
     if (isAdminOrSupervisor && activeTab === 'team_requests') {
       fetchTeamRequests();
     }
-  }, [token, activeTab]);
+  }, [token, activeTab, refreshKey]);
 
   const fetchLeaveConfig = async () => {
     try {

@@ -30,7 +30,7 @@ function RecenterAutomatically({ lat, lng }) {
   return null;
 }
 
-const Settings = ({ token, showToast }) => {
+const Settings = ({ token, showToast, refreshKey }) => {
   // Navigation tab state
   const [activeTab, setActiveTab] = useState('profile');
   const scrollRef = useRef(null);
@@ -97,7 +97,7 @@ const Settings = ({ token, showToast }) => {
 
   useEffect(() => {
     fetchSettings();
-  }, [token]);
+  }, [token, refreshKey]);
 
   // Accessibility & Focus trap for Confirmation Modal
   useEffect(() => {

@@ -36,7 +36,7 @@ function MapBoundsController({ location, officeLocation, isOutside }) {
   return null;
 }
 
-export default function Attendance({ token, decoded, showToast }) {
+export default function Attendance({ token, decoded, showToast, refreshKey }) {
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [accuracy, setAccuracy] = useState(null);
@@ -72,7 +72,9 @@ export default function Attendance({ token, decoded, showToast }) {
   useEffect(() => {
     fetchOfficeLocation();
     fetchMyAttendance();
+  }, [refreshKey]);
 
+  useEffect(() => {
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser.");
       return;

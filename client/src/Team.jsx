@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_URL } from './config/api';
 import './Team.css';
 
-const Team = ({ token, decoded, showToast }) => {
+const Team = ({ token, decoded, showToast, refreshKey }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -141,7 +141,7 @@ const Team = ({ token, decoded, showToast }) => {
 
   useEffect(() => {
     fetchUsers();
-  }, [token]);
+  }, [token, refreshKey]);
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
